@@ -7,6 +7,8 @@
     <style></style>
   </head>
   <body>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom-eventlisteners.js"></script>
     <div class="spinner" id='spinner'></div>
     <div class="emscripten" id="status">Downloading...</div>
 
@@ -17,19 +19,53 @@
     <div id="content"></div>
 
     <script type='text/javascript'>
+      var state;
+
+      function prismToVnode(pNode) {
+        if (pNode.type === "text") {
+          return snabbdom.h('span', pNode.content);
+        }
+
+        if (pNode.onClick) {
+          pNode.on = {
+            click: () => dispatch(pNode.onClick.value)
+          };
+        }
+
+        var _children = pNode._children;
+        delete pNode["_children"];
+
+        return snabbdom.h(pNode.type, pNode, (_children.slice() || []).map(prismToVnode));
+      }
+
+      function dispatch(event) {
+        Module.callMain([JSON.stringify(state), event]);
+      }
+
       var statusElement = document.getElementById('status');
       var progressElement = document.getElementById('progress');
       var spinnerElement = document.getElementById('spinner');
+
+      var patch = snabbdom.init([snabbdom_eventlisteners.default]);
+      var content = document.getElementById('content');
+
+      function rerender(text) {
+        console.log(text);
+        var parsedOutput = JSON.parse(text);
+        state = parsedOutput.state;
+        var pdom = parsedOutput.dom;
+
+        var vdom = prismToVnode(pdom);
+        console.log(JSON.stringify(vdom, null, 2));
+        patch(content, vdom);
+        content = vdom;
+      }
 
       var Module = {
         preRun: [],
         postRun: [],
         print: (function() {
-          var content = document.getElementById('content');
-          return function(text) {
-            console.log(text);
-            content.innerHTML += text;
-          };
+          return rerender;
         })(),
         printErr: function(text) {
           if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
