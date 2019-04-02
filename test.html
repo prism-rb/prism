@@ -28,7 +28,7 @@
 
         if (pNode.onClick) {
           pNode.on = {
-            click: () => dispatch(pNode.onClick.value)
+            click: () => dispatch(pNode.onClick.value, pNode.onClick.args)
           };
         }
 
@@ -38,8 +38,8 @@
         return snabbdom.h(pNode.type, pNode, (_children.slice() || []).map(prismToVnode));
       }
 
-      function dispatch(event) {
-        Module.callMain([JSON.stringify(state), event]);
+      function dispatch(event, args) {
+        Module.callMain([JSON.stringify(state), JSON.stringify({message: event, args})]);
       }
 
       var statusElement = document.getElementById('status');
@@ -50,13 +50,11 @@
       var content = document.getElementById('content');
 
       function rerender(text) {
-        console.log(text);
         var parsedOutput = JSON.parse(text);
         state = parsedOutput.state;
         var pdom = parsedOutput.dom;
 
         var vdom = prismToVnode(pdom);
-        console.log(JSON.stringify(vdom, null, 2));
         patch(content, vdom);
         content = vdom;
       }
