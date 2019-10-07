@@ -2,3 +2,4 @@ test.c
 test.wasm
 test.js
 
+node_modules/
