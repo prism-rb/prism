@@ -10,7 +10,9 @@
           height: 100%;
           font-family: Helvetica, arial, sans-serif;
           margin: 0;
-          padding: none
+          padding: none;
+          background: #fff6e8;
+          color: #0e1f24;
         }
 
         #root {
@@ -29,11 +31,12 @@
 
         .slide {
           height: 100%;
+          max-width: 80%;
           display: flex;
           flex-direction: column;
-          justify-content: space-around;
+          justify-content: center;
           align-items: center;
-          font-size: 2.4em;
+          font-size: 2.6em;
           margin: 1em;
         }
 
@@ -45,6 +48,12 @@
 
         .slide button {
           font-size: 0.6em;
+        }
+
+        .slide input {
+          font-size: 0.6em;
+          margin: 1em;
+          width: 300px;
         }
 
         button {
@@ -81,21 +90,45 @@
             options[key] = rvtree[key];
           }
 
+          options.on = {};
+
           if (rvtree.onClick) {
-            options.on = {
-              click(event) {
-                Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rvtree.onClick)]);
-                render();
-              }
+            options.on.click = function(event) {
+              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rvtree.onClick)]);
+              render();
             }
           }
 
           if (rvtree.onKeydown) {
-            options.on = {
-              keydown(event) {
-                Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rvtree.onClick)]);
-                render();
+            options.on.keydown = function(event) {
+              var rubyEvent = Object.assign(
+                {},
+                rvtree.onKeydown,
+                {args: [event.key].concat(rvtree.onKeydown.args)}
+              );
+              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rubyEvent)]);
+              render();
+            }
+          }
+
+          if (rvtree.onInput) {
+            options.on.input = function(event) {
+              var args = rvtree.onInput.args.slice();
+
+              var includeProp;
+
+              if (includeProp = rvtree.onInput.includeProp) {
+                args.unshift(event.target[includeProp]);
               }
+
+              var rubyEvent = Object.assign(
+                {},
+                rvtree.onInput,
+                {args: args}
+              );
+
+              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rubyEvent)]);
+              render();
             }
           }
 

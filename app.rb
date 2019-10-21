@@ -139,10 +139,10 @@ class HangmanSlide < Prism::Component
     if alphabet.include?(guess)
       guesses << guess
       if answer.chars.include?(guess)
-          @feedback = "Nice"
+        @feedback = "Nice"
       else
-          @feedback = "Wrong"
-          @artnumber += 1
+        @feedback = "Wrong"
+        @artnumber += 1
       end
     else
       @feedback = "Invalid"
@@ -229,6 +229,21 @@ class CounterListSlide < Prism::Component
   end
 end
 
+class HelloRubySlide < Prism::Component
+  attr_accessor :name
+
+  def initialize
+    @name = "World"
+  end
+
+  def render
+    div(".slide", [
+      input(onInput: dispatchWith(:value, :name=), props: {value: name}),
+      h3("Hello, #{name}!")
+    ])
+  end
+end
+
 class Slides < Prism::Component
   attr_reader :slides
 
@@ -237,7 +252,7 @@ class Slides < Prism::Component
       TitleSlide.new,
       slide("A tale of two languages"),
       slide("I love the browser"),
-      slide("Let's write Ruby in the browser!"),
+      slide("Let's make browser apps with Ruby!"),
       slide("The world isn't ready"),
       slide("Suddenly, WebAssembly!"),
       slide("The world still isn't ready!"),
@@ -245,8 +260,23 @@ class Slides < Prism::Component
       slide("Putting all the pieces together"),
       slide("Ruby, meet the browser"),
       slide("Presenting: Prism"),
+      HelloRubySlide.new,
       CounterListSlide.new,
-      HangmanSlide.new
+      HangmanSlide.new,
+      slide("So what still needs doing?"),
+      slide("But what about..."),
+      slide("Debugging"),
+      slide("Needing to compile"),
+      slide("Performance"),
+      slide("Stability"),
+      slide("Bundle size"),
+      slide("Old browsers"),
+      slide("The JS Ecosystem"),
+      slide("New thing to learn!"),
+      slide("Let's wrap it up"),
+      slide("You can wmake browser apps with Ruby!"),
+      slide("WebAssembly is good and getting better"),
+      slide("Go invent some cool stuff!")
     ]
 
     @index = 0
@@ -256,30 +286,36 @@ class Slides < Prism::Component
     div(".slide", [h2("", content)])
   end
 
-  def previous
+  def previous_slide
     @index -= 1 unless first_slide?
   end
 
-  def next
+  def next_slide
     @index += 1 unless last_slide?
   end
 
-  def keydown(event)
-    puts event
+  def keydown(key)
+    case key
+    when "ArrowRight", "Space"
+      next_slide
+    when "ArrowLeft"
+      previous_slide
+    end
   end
 
   def render
-    div(".slides", {onKeydown: dispatchEvent(:keydown)}, [
+    div(".slides", {click: dispatch(:next_slide), onKeydown: dispatchEvent(:keydown), attrs: {tabIndex: 0}}, [
       current_slide,
       div(".controls", [
         button(
           "Previous",
-          onClick: dispatch(:previous),
+          onClick: dispatch(:previous_slide),
           props: {disabled: first_slide?}
         ),
+        "#{@index + 1}/#{slides.length}",
         button(
           "Next",
-          onClick: dispatch(:next),
+          onClick: dispatch(:next_slide),
           props: {disabled: last_slide?}
         )
       ])
