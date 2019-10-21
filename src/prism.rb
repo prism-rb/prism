@@ -164,7 +164,7 @@ class Prism::Component
       options[:class] = className
       options[:children] = children || []
 
-      options[:children] = options[:children].map do |child|
+      options[:children] = options[:children].compact.map do |child|
         if child.is_a?(Prism::Component)
           child.render
         elsif child.is_a?(String)
