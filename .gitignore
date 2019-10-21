@@ -1,5 +1,6 @@
-test.c
-test.wasm
-test.js
+bundle.rb
+bundle.c
+bundle.js
+bundle.wasm
 
 node_modules/

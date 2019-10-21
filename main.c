@@ -8,7 +8,7 @@
 #include <mruby/string.h>
 #include <mruby/variable.h>
 #include <mruby/throw.h>
-#include "test.c"
+#include "bundle.c"
 
 mrb_value app;
 mrb_state *mrb;
@@ -20,7 +20,7 @@ main(int argc, const char * argv[])
 
   if (!mrb) { /* handle error */ }
 
-  app = mrb_load_irep(mrb, test);
+  app = mrb_load_irep(mrb, bundle);
   mrb_gc_register(mrb, app);
 
   return 1;
@@ -30,6 +30,7 @@ char* render() {
   mrb_value result = mrb_funcall(mrb, app, "render", 0);
   if (mrb->exc) {
     mrb_print_error(mrb);
+    mrb->exc = NULL;
   }
   return RSTRING_PTR(result);
 }
@@ -40,6 +41,7 @@ void dispatch(char* message) {
   mrb_funcall(mrb, app, "dispatch", 1, str);
   if (mrb->exc) {
     mrb_print_error(mrb);
+    mrb->exc = NULL;
   }
   mrb_gc_unregister(mrb, str);
 }
