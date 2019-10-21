@@ -1,4 +1,10 @@
 class Prism
+  @@instances = {}
+
+  def self.instances
+    @@instances
+  end
+
   def self.mount(component)
     self.new(component)
   end
@@ -14,11 +20,17 @@ class Prism
   def dispatch(messageJSON)
     message = JSON::parse(messageJSON)
 
-    @component.send(message["type"], *message["args"])
+    instance = Prism.instances[message["instance"]]
+
+    if instance.respond_to? message["type"]
+      instance.send(message["type"], *message["args"])
+    else
+      raise "Component #{instance.class} has no method ##{message["type"]}"
+    end
   end
 end
 
-module Prism::DOM
+class Prism::Component
   TAG_NAMES = [
   'a',
   'abbr',
@@ -126,11 +138,41 @@ module Prism::DOM
   ]
 
   TAG_NAMES.each do |tag|
-    define_method(tag.to_sym) do |className, options, children|
-      options = options || {}
+    define_method(tag.to_sym) do |*args|
+      options = {}
+      className = ""
+      children = []
+
+      until args.empty?
+        arg = args.shift
+
+        case arg
+        when String
+          if arg.start_with?(".")
+            className = arg
+          else
+            children = [text(arg)]
+          end
+        when Array
+          children = arg
+        when Object
+          options = arg
+        end
+      end
+
       options[:type] = tag
       options[:class] = className
       options[:children] = children || []
+
+      options[:children] = options[:children].map do |child|
+        if child.is_a?(Prism::Component)
+          child.render
+        elsif child.is_a?(String)
+          text(child)
+        else
+          child
+        end
+      end
 
       options
     end
@@ -141,7 +183,12 @@ module Prism::DOM
   end
 
   def dispatch(sym, *args)
-    {:type => sym, :args => args}
+    Prism.instances[object_id] = self # TODO - this is a memory leak
+    {:instance => object_id, :type => sym, :args => args}
+  end
+
+  def render
+    raise "Unimplemented render method for #{self.class.name}"
   end
 end
 
