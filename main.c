@@ -10,37 +10,56 @@
 #include <mruby/throw.h>
 #include "test.c"
 
-struct _args {
-  FILE *rfp;
-  mrb_bool verbose      : 1;
-  mrb_bool debug        : 1;
-  int argc;
-  char** argv;
-  int libc;
-  char **libv;
-};
+mrb_value app;
+mrb_state *mrb;
 
 int
 main(int argc, const char * argv[])
 {
-  int n;
-  int i;
-  mrb_value ARGV;
-  mrb_state *mrb = mrb_open();
+  mrb = mrb_open();
 
   if (!mrb) { /* handle error */ }
 
-  ARGV = mrb_ary_new_capa(mrb, argc);
-  for (i = 0; i < argc; i++) {
-    char* utf8 = mrb_utf8_from_locale(argv[i], -1);
-    if (utf8) {
-      mrb_ary_push(mrb, ARGV, mrb_str_new_cstr(mrb, utf8));
-      mrb_utf8_free(utf8);
-    }
-  }
-  mrb_define_global_const(mrb, "ARGV", ARGV);
+  app = mrb_load_irep(mrb, test);
+  mrb_gc_register(mrb, app);
 
-  mrb_load_irep(mrb, test);
-  mrb_close(mrb);
-  return 0;
+  return 1;
 }
+
+char* render() {
+  mrb_value result = mrb_funcall(mrb, app, "render", 0);
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+  }
+  return RSTRING_PTR(result);
+}
+
+void dispatch(char* message) {
+  mrb_value str = mrb_str_new_cstr(mrb, message);
+  mrb_gc_register(mrb, str);
+  mrb_funcall(mrb, app, "dispatch", 1, str);
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+  }
+  mrb_gc_unregister(mrb, str);
+}
+
+// main
+//
+// make the ruby component
+// return a reference?
+//
+// dispatch
+//
+// call the ruby component with an event triggered by event handler
+// we might need the reference?
+//
+// what is the mruby api for calling methods?
+
+/**
+ * Gets a class.
+ * @param mrb The current mruby state.
+ * @param name The name of the class.
+ * @return [struct RClass *] A reference to the class.
+*/
+// MRB_API struct RClass * mrb_class_get(mrb_state *mrb, const char *name);

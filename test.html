@@ -27,13 +27,66 @@
         <progress hidden id=progress max=100 value=0></progress>
     </div>
     <div id="root"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom-class.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom-eventlisteners.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom-style.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom-props.js"></script>
     <script>
+        function rubyVTreeToSnabbdom(rvtree) {
+          if (rvtree.type === "text") { return rvtree.content; }
+
+          let options = {};
+
+          for (let key in rvtree) {
+            if (key === "children") { continue; }
+            if (key === "type") { continue; }
+            if (key === "class") { continue; }
+            if (key === "onClick") { continue; }
+
+            options[key] = rvtree[key];
+          }
+
+          if (rvtree.onClick) {
+            options.on = {
+              click() {
+                Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rvtree.onClick)]);
+                render();
+              }
+            }
+          }
+
+          return snabbdom.h(
+            rvtree.type + (rvtree.class || ""),
+            options,
+            (rvtree.children || []).map(rubyVTreeToSnabbdom)
+          );
+        }
+
+        var patch = snabbdom.init([ // Init patch function with chosen modules
+          snabbdom_class.default,
+          snabbdom_props.default,
+          snabbdom_style.default,
+          snabbdom_eventlisteners.default
+        ]);
+
+        var currentContainer = document.getElementById('root');
+        function render() {
+          const rvtree = JSON.parse(Module.ccall("render", "string", []));
+          const vtree = rubyVTreeToSnabbdom(rvtree);
+
+          patch(currentContainer, vtree);
+
+          currentContainer = vtree;
+        }
+
         var statusElement = document.getElementById("status"),
             progressElement = document.getElementById("progress"),
             spinnerElement = document.getElementById("spinner"),
             Module = {
                 preRun: [],
-                postRun: [],
+                postRun: [ render ],
                 print: function() {
                     var t = document.getElementById("output");
                     return t && (t.value = ""),
@@ -67,8 +120,7 @@
             }
         }
     </script>
-    <script src=node_modules/asm-dom/dist/js/asm-dom.js></script>
-    <script async src=test-asm.js></script>
+    <script async src=test.js></script>
 </body>
 
 </html>

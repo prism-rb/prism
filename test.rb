@@ -1,15 +1,24 @@
-module Prism
-  def self.mount(component, props)
-    if ARGV[1]
-      props = JSON.parse(ARGV[1])
-    end
-    message = ARGV[2] || '{"message": "noop", "args": []}'
-    message = JSON.parse(message)
-    puts JSON.generate(component.new(props).mount(message))
+class Prism
+  def self.mount(component)
+    self.new(component)
+  end
+
+  def initialize(component)
+    @component = component
+  end
+
+  def render
+    JSON::stringify(@component.render)
+  end
+
+  def dispatch(messageJSON)
+    message = JSON::parse(messageJSON)
+
+    @component.send(message["type"], *message["args"])
   end
 end
 
-class Prism::Component
+module Prism::DOM
   TAG_NAMES = [
   'a',
   'abbr',
@@ -116,22 +125,12 @@ class Prism::Component
   'video',
   ]
 
-  def initialize(props)
-    @props = props
-  end
-
   TAG_NAMES.each do |tag|
-    define_method(tag.to_sym) do |*args|
-      options, children = *args
-
-      if options.is_a? Array
-        children = options
-        options = {}
-      end
-
+    define_method(tag.to_sym) do |className, options, children|
       options = options || {}
       options[:type] = tag
-      options[:_children] = children || []
+      options[:class] = className
+      options[:children] = children || []
 
       options
     end
@@ -142,40 +141,35 @@ class Prism::Component
   end
 
   def dispatch(sym, *args)
-    {:type => "dispatch", :value => sym, :args => args}
-  end
-
-  def mount(message)
-    m = message["message"].to_sym
-
-    send(m, *message["args"]) unless m == :noop
-
-    {:state => @props, :dom => render}
+    {:type => sym, :args => args}
   end
 end
 
+class Counter
+  include Prism::DOM
 
-class Counter < Prism::Component
-  def count
-    @props["count"]
+  attr_reader :count
+
+  def initialize(count)
+    @count = count
   end
 
   def change(amount)
-    @props["count"] += amount
+    @count += amount
   end
 
   def reset
-    @props["count"] = 0
+    @count = 0
   end
 
   def render
-    div({:class => "counter"}, [
-      div([text(count)]),
-      button({:onClick => dispatch(:change, 1)}, [text("+")]),
-      button({:onClick => dispatch(:change, -1)}, [text("-")]),
-      button({:onClick => dispatch(:reset)}, [text("Reset")])
+    div(".counter", {}, [
+      div("", {}, [text(count)]),
+      button("", {:onClick => dispatch(:change, 1)}, [text("+")]),
+      button("", {:onClick => dispatch(:change, -1)}, [text("-")]),
+      button("", {:onClick => dispatch(:reset)}, [text("Reset")])
     ])
   end
 end
 
-Prism.mount(Counter, {"count" => 0})
+Prism.mount(Counter.new(0))

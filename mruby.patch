@@ -1,5 +1,5 @@
 diff --git a/build_config.rb b/build_config.rb
-index 751317c7..9d84f761 100644
+index 751317c7..d9dab935 100644
 --- a/build_config.rb
 +++ b/build_config.rb
 @@ -125,6 +125,15 @@ MRuby::Build.new('test') do |conf|
@@ -20,10 +20,10 @@ index 751317c7..9d84f761 100644
  #  if ENV['VisualStudioVersion'] || ENV['VSINSTALLDIR']
 diff --git a/mrbgems/wasm.gembox b/mrbgems/wasm.gembox
 new file mode 100644
-index 00000000..4aa8f0d2
+index 00000000..b19baa75
 --- /dev/null
 +++ b/mrbgems/wasm.gembox
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,91 @@
 +MRuby::GemBox.new do |conf|
 +  # Meta-programming features
 +  conf.gem :core => "mruby-metaprog"
@@ -111,4 +111,7 @@ index 00000000..4aa8f0d2
 +
 +  # Use mruby-compiler to build other mrbgems
 +  conf.gem :core => "mruby-compiler"
++
++  # Add third party json support
++  conf.gem :github => "mattn/mruby-json", :checksum_hash => "054699892b0d681110e7348440cddb70a3fd671e"
 +end
