@@ -15,8 +15,8 @@ patch-mruby:
 unpatch-mruby:
 	cd mruby && git checkout . && git clean -f && cd ..
 
-bundle.js: mruby-build bundle.c
-	emcc -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1 -I mruby/include main.c mruby/build/emscripten/lib/libmruby.a -o bundle.js && echo "Done."
+bundle.js: main.c bundle.c
+	emcc -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event']" -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1 -I mruby/include main.c mruby/build/emscripten/lib/libmruby.a -o bundle.js && echo "Done."
 
 clean:
 	rm bundle.js bundle.c

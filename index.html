@@ -76,16 +76,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom-style.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/snabbdom/0.7.3/snabbdom-props.js"></script>
     <script>
+        function stringifyEvent(e) {
+          const obj = {};
+          for (let k in e) {
+            obj[k] = e[k];
+          }
+          return JSON.stringify(obj, (k, v) => {
+            if (v instanceof Node) return 'Node';
+            if (v instanceof Window) return 'Window';
+            return v;
+          }, ' ');
+        }
+
         function rubyVTreeToSnabbdom(rvtree) {
           if (rvtree.type === "text") { return rvtree.content; }
 
           let options = {};
 
           for (let key in rvtree) {
-            if (key === "children") { continue; }
-            if (key === "type") { continue; }
-            if (key === "class") { continue; }
+            if (key === "_children") { continue; }
+            if (key === "_type") { continue; }
+            if (key === "_class") { continue; }
             if (key === "onClick") { continue; }
+            if (key === "onKeydown") { continue; }
+            if (key === "onInput") { continue; }
 
             options[key] = rvtree[key];
           }
@@ -132,10 +146,31 @@
             }
           }
 
+          if (rvtree.onChange) {
+            options.on.change = function(event) {
+              var args = rvtree.onChange.args.slice();
+
+              var includeProp;
+
+              if (includeProp = rvtree.onChange.includeProp) {
+                args.unshift(event.target[includeProp]);
+              }
+
+              var rubyEvent = Object.assign(
+               {},
+                rvtree.onChange,
+                {args: args}
+              );
+
+              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rubyEvent)]);
+              render();
+            }
+          }
+
           return snabbdom.h(
-            rvtree.type + (rvtree.class || ""),
+            rvtree._type + (rvtree._class || ""),
             options,
-            (rvtree.children || []).map(rubyVTreeToSnabbdom)
+            (rvtree._children || []).map(rubyVTreeToSnabbdom)
           );
         }
 

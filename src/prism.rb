@@ -29,9 +29,10 @@ module Prism
         raise "Component #{instance.class} has no method ##{message["type"]}"
       end
     end
-  end
 
-  class Document
+    def event(eventJSON, id)
+      DOM.event(JSON::parse(eventJSON), id)
+    end
   end
 
   class Component
@@ -164,11 +165,11 @@ module Prism
           end
         end
 
-        options[:type] = tag
-        options[:class] = className
-        options[:children] = children || []
+        options[:_type] = tag
+        options[:_class] = className
+        options[:_children] = children || []
 
-        options[:children] = options[:children].compact.map do |child|
+        options[:_children] = options[:_children].compact.map do |child|
           if child.is_a?(Prism::Component)
             child.render
           elsif child.is_a?(String)
@@ -203,6 +204,42 @@ module Prism
 
     def render
       raise "Unimplemented render method for #{self.class.name}"
+    end
+  end
+end
+
+
+module DOM
+  @@event_id = 0
+  @@listeners = {}
+
+  def self.get_event_id
+    @@event_id += 1
+
+    @@event_id.to_s
+  end
+
+  def self.add_listener(id, &block)
+    @@listeners[id] = block
+  end
+
+  def self.select(selector)
+    ElementSelection.new(selector)
+  end
+
+  def self.event(eventData, id)
+    @@listeners[id].call(eventData)
+  end
+
+  class ElementSelection
+    def initialize(selector)
+      @selector = selector
+    end
+
+    def on(eventName, &block)
+      id = DOM.get_event_id
+      InternalDOM.add_event_listener(@selector, eventName, id)
+      DOM.add_listener(id, &block)
     end
   end
 end

@@ -1,3 +1,4 @@
+#include <emscripten.h>
 #include <stdarg.h>
 #include <mruby.h>
 #include <mruby/irep.h>
@@ -13,12 +14,60 @@
 mrb_value app;
 mrb_state *mrb;
 
+
+mrb_value
+mrb_example_method(mrb_state *mrb, mrb_value self){
+  mrb_value selector, event, id;
+  mrb_get_args(mrb, "SSS", &selector, &event, &id);
+
+  EM_ASM_({
+    var selector = UTF8ToString($0);
+    var eventName = UTF8ToString($1);
+    var id = UTF8ToString($2);
+    var elements;
+
+    if (selector === 'document') {
+      elements = [window.document];
+    } else if (selector === 'body') {
+      elements = [window.document.body];
+    } else {
+      elements = document.querySelectorAll(selector);
+    }
+
+    for (var i = 0; i < elements.length; i++) {
+      var element = elements[i];
+
+      element.addEventListener(eventName, function(event) {
+        Module.ccall(
+          'event',
+          'void',
+          ['string', 'string'],
+          [stringifyEvent(event), id]
+        );
+
+        render();
+      });
+    };
+  }, RSTRING_PTR(selector), RSTRING_PTR(event), RSTRING_PTR(id));
+  return mrb_nil_value();
+}
+
 int
 main(int argc, const char * argv[])
 {
+  struct RClass *dom_class;
+
   mrb = mrb_open();
 
   if (!mrb) { /* handle error */ }
+  dom_class = mrb_define_class(mrb, "InternalDOM", mrb->object_class);
+  mrb_define_class_method(
+    mrb,
+    dom_class,
+    "add_event_listener",
+    mrb_example_method,
+    MRB_ARGS_REQ(3)
+  );
 
   app = mrb_load_irep(mrb, bundle);
   mrb_gc_register(mrb, app);
@@ -44,6 +93,17 @@ void dispatch(char* message) {
     mrb->exc = NULL;
   }
   mrb_gc_unregister(mrb, str);
+}
+
+void event(char* message, char* id) {
+  mrb_value str = mrb_str_new_cstr(mrb, message);
+  mrb_value str2 = mrb_str_new_cstr(mrb, id);
+  mrb_funcall(mrb, app, "event", 2, str, str2);
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
 }
 
 // main
