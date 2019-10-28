@@ -21,188 +21,11 @@ class Counter < Prism::Component
   def render
     div(".counter", {}, [
       div("", {}, [count.to_s]),
-      button({:onClick => dispatch(:change, 1)}, [text("+")]),
-      button({:onClick => dispatch(:change, -1)}, [text("-")]),
-      button({:onClick => dispatch(:reset)}, [text("Reset")]),
-      button({:onClick => dispatch(:remove)}, [text("Delete")])
+      button({:onClick => call(:change).with(+1)}, [text("+")]),
+      button({:onClick => call(:change).with(-1)}, [text("-")]),
+      button({:onClick => call(:reset)}, [text("Reset")]),
+      button({:onClick => call(:remove)}, [text("Delete")])
     ])
-  end
-end
-
-class TitleSlide < Prism::Component
-  def render
-    div(".slide", [
-      h1("Your Browser on Ruby")
-    ])
-  end
-end
-
-class BodySlide < Prism::Component
-  def render
-    div(".slide", [
-      h3("A slide title"),
-      p("A big ol body with lots of stuff wow this goes on so long."),
-    ])
-  end
-end
-
-ART = [
-  "
-  /----\\
-  |    |
-  |
-  |
-  |
-  |
-  |
-  ----------
-  ",
-  "
-  /----\\
-  |    |
-  |    o
-  |
-  |
-  |
-  |
-  ----------
-  ",
-  "
-  /----\\
-  |    |
-  |    o
-  |    |
-  |
-  |
-  |
-  ----------
-  ",
-  "
-  /----\\
-  |    |
-  |    o
-  |    |\\
-  |
-  |
-  |
-  ----------
-  ",
-  "
-  /----\\
-  |    |
-  |    o
-  |   /|\\
-  |
-  |
-  |
-  ----------
-  ",
-  "
-  /----\\
-  |    |
-  |    o
-  |   /|\\
-  |   /
-  |
-  |
-  ----------
-  ",
-  "
-  /----\\
-  |    |
-  |    o
-  |   /|\\
-  |   / \\
-  |
-  |
-  ----------
-  "
-]
-
-class HangmanSlide < Prism::Component
-  attr_reader :answer
-  attr_reader :guesses
-  attr_accessor :artnumber
-
-  def initialize
-    restart
-  end
-
-  def make_guess(guess)
-    alphabet = [*"a".."z"]
-
-    if guesses.include?(guess)
-        @feedback = "You've already guessed that"
-        return
-    end
-
-    if alphabet.include?(guess)
-      guesses << guess
-      if answer.chars.include?(guess)
-        @feedback = "Nice"
-      else
-        @feedback = "Wrong"
-        @artnumber += 1
-      end
-    else
-      @feedback = "Invalid"
-    end
-  end
-
-  def restart
-    @answer = "kiwiruby"
-    @artnumber = 0
-    @guesses = []
-    @feedback = ""
-  end
-
-  def render
-    div('.slide', [
-      ascii_art,
-      div('.letters', [*'a'..'z'].map { |char|
-        button(
-          char,
-          onClick: dispatch(:make_guess, char),
-          props: {disabled: guesses.include?(char) || game_over?}
-        )
-      }),
-      button('.restart', 'Restart', onClick: dispatch(:restart))
-    ])
-  end
-
-  private
-
-  def ascii_art
-    output = ""
-
-    output += ART[artnumber] + "\n"
-
-    output += answer.chars
-      .map { |char| if guesses.include?(char) then char else "_" end }
-      .join(" ")
-
-    output += "\n"
-
-    @feedback = "You won!!!" if won?
-    @feedback = "Game over :(\nThe word was: #{answer}" if lost?
-
-    output += "\n" + @feedback + "\n"
-
-    pre([
-      text(output.chomp)
-    ])
-  end
-
-  def game_over?
-    won? || lost?
-  end
-
-  def won?
-    answer.chars.all? { |char| guesses.include?(char) }
-  end
-
-  def lost?
-    artnumber>=6
   end
 end
 
@@ -222,24 +45,9 @@ class CounterListSlide < Prism::Component
   def render
     div(".slide", [
       div('.counter-list', [
-        div('.controls', [button({:onClick => dispatch(:add)}, "add counter")]),
+        div('.controls', [button({:onClick => call(:add)}, "add counter")]),
         div('.counters', @counters)
       ])
-    ])
-  end
-end
-
-class HelloRubySlide < Prism::Component
-  attr_accessor :name
-
-  def initialize
-    @name = "World"
-  end
-
-  def render
-    div(".slide", [
-      input(onInput: dispatchWith(:value, :name=), props: {value: name}),
-      h3("Hello, #{name}!")
     ])
   end
 end
@@ -254,12 +62,20 @@ class HelloRubyDrawnSlide < Prism::Component
   def render
     div(".slide.name", [
       img('.what-is-your-name', props: {src: 'assets/slide22-hello-name-top.svg'}),
-      div(".drawn-input", [
-        img(props: {src: 'assets/slide22-hello-name-background.svg'}),
-        input(onInput: dispatchWith(:value, :name=), props: {value: name}),
-        img(props: {src: 'assets/slide22-hello-name-box.svg'})
-      ]),
+      drawn_input,
       h3(name.length > 0 ? "Hello, #{name}!" : "Enter your name!")
+    ])
+  end
+
+  def drawn_input
+    div(".drawn-input", [
+      img(props: {src: 'assets/slide22-hello-name-background.svg'}),
+      input(
+        onKeydown: call(:name=).with_target_data(:value).stop_propagation,
+        onInput: call(:name=).with_target_data(:value).stop_propagation,
+        props: {value: name}
+      ),
+      img(props: {src: 'assets/slide22-hello-name-box.svg'})
     ])
   end
 end
@@ -284,15 +100,31 @@ class TodoListSlide < Prism::Component
     @items.reject!(&:completed?)
   end
 
+  def keydown(key, value)
+    if key == "Enter"
+      add_todo_item
+    else
+      self.new_todo = value
+    end
+  end
+
+  def drawn_input
+    div(".drawn-input", [
+      img(props: {src: 'assets/slide22-hello-name-background.svg'}),
+      input(
+        onKeydown: call(:keydown).with_event_data(:key).with_target_data(:value).stop_propagation,
+        onInput: call(:new_todo=).with_target_data(:value).stop_propagation,
+        props: {value: new_todo}
+      ),
+      img(props: {src: 'assets/slide22-hello-name-box.svg'})
+    ])
+  end
+
   def render
     div(".slide", [
       div(".todo-list", [
-        input(".new-todo", onInput: dispatchWith(:value, :new_todo=), props: {value: new_todo}),
-        div(".controls", [
-          button(".add-todo", "Add Todo Item", onClick: dispatch(:add_todo_item)),
-          button("Remove Completed", onClick: dispatch(:remove_completed))
-        ]),
-        div(".summary", "#{items.count} items, #{items.select(&:completed?).count} completed"),
+        img(props: {src: 'assets/todo-static.svg'}),
+        drawn_input,
         div(".todo-list-items", items)
       ])
     ])
@@ -302,12 +134,15 @@ class TodoListSlide < Prism::Component
 
   class TodoItem < Prism::Component
     attr_reader :todo
-    attr_writer :completed
 
     def initialize(todo, &block)
       @todo = todo
       @completed = false
       @remove = block
+    end
+
+    def toggle_complete
+      @completed = !@completed
     end
 
     def completed?
@@ -320,23 +155,12 @@ class TodoListSlide < Prism::Component
 
     def render
       div(".todo-item", [
-        input(
-          '.complete',
-          props: {type: 'checkbox', checked: @completed},
-          onChange: dispatchWith(:checked, :completed=)
-        ),
-        span(
-          [text(@todo)],
-          style: {
-            "text-decoration": (
-              if completed?
-              then "line-through"
-              else "none"
-              end
-            )
-          }
-        ),
-        button("Remove", onClick: dispatch(:remove))
+        div('.complete', {onClick: call(:toggle_complete)}, [
+          img(props: {src: 'assets/todo-circle.svg'}),
+          img(props: {src: 'assets/todo-tick.svg'}, style: {display: completed? ? 'block' : 'none'})
+        ]),
+        div(".text", [text(@todo)]),
+        img(".trash", props: {src: 'assets/todo-trash.svg'}, onClick: call(:remove)),
       ])
     end
   end
@@ -370,14 +194,13 @@ class Slides < Prism::Component
       image_slide('slide20-presenting-prism.svg'),
       image_slide('slide21-enough-talk-lets-dance.svg'),
       HelloRubyDrawnSlide.new,
+      TodoListSlide.new,
       image_slide('slide23-demo-time.svg'),
       image_slide('slide24-yay.svg'),
       image_slide('slide25-yak-shaving.svg'),
       image_slide('slide26-but-what-about.svg'),
       image_slide('slide27-we-did-it.svg'),
       image_slide('slide28-thanks.svg'),
-      TodoListSlide.new,
-      HangmanSlide.new,
     ]
 
     @index = 0
@@ -414,17 +237,17 @@ class Slides < Prism::Component
   end
 
   def render
-    div(".slides", {click: dispatch(:next_slide), onKeydown: dispatchEvent(:keydown), attrs: {tabIndex: 0}}, [
+    div(".slides", [
       img(
         ".control",
-        onClick: dispatch(:previous_slide),
+        onClick: call(:previous_slide),
         props: {src: "assets/prev.svg"},
         class: {hidden: first_slide?}
       ),
       current_slide,
       img(
         ".control",
-        onClick: dispatch(:next_slide),
+        onClick: call(:next_slide),
         props: {src: "assets/next.svg"},
         class: {hidden: last_slide?}
       )

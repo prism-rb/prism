@@ -4,7 +4,7 @@
 <head>
     <meta charset=utf-8>
     <meta content="text/html; charset=utf-8" http-equiv=Content-Type>
-    <title>Emscripten-Generated Code</title>
+    <title>Your Browser on Ruby</title>
     <style>
         html, body {
           height: 100%;
@@ -101,6 +101,62 @@
           border: none;
         }
 
+        .todo-list {
+          position: relative;
+          flex-grow: 0;
+          flex-shrink: 0;
+          transform: scale(1.5, 1.5);
+        }
+
+        .todo-list .drawn-input {
+          position: absolute;
+          left: 165px;
+          top: 20px;
+        }
+
+        .todo-list-items {
+          display: flex;
+          flex-direction: column;
+          position: absolute;
+          left: 15px;
+          top: 100px;
+          max-height: 230px;
+          overflow-y: scroll;
+          overflow-x: hidden;
+          width: 480px;
+        }
+
+        .trash {
+          margin-left: auto;
+        }
+
+        .todo-list img {
+          flex-grow: 0;
+        }
+
+        .todo-item {
+          display: flex;
+          margin: 10px;
+        }
+
+        .complete {
+          position: relative;
+          width: 50px;
+          height: 45px;
+        }
+
+        .todo-item .text {
+          margin: 0px 10px;
+          font-size: 2rem;
+          align-self: center;
+        }
+
+        .complete img {
+          position: absolute;
+          top: 0px;
+          left: 0px;
+        }
+
         .slide.name>img, .slide.name>h3, .slide.name>div {
           flex-grow: 0;
           margin: 0.5em;
@@ -144,9 +200,10 @@ function getEventId(event) {
 
   return id;
 }
+
 function preventDefault(id) {
   const event = events.get(id);
-  
+
   if (event) {
     event.preventDefault();
   } else {
@@ -170,66 +227,46 @@ function preventDefault(id) {
             options[key] = rvtree[key];
           }
 
-          options.on = {};
+          if (options.on) {
+            for (let key in options.on) {
+              var handler = options.on[key];
 
-          if (rvtree.onClick) {
-            options.on.click = function(event) {
-              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rvtree.onClick)]);
-              render();
-            }
-          }
+              options.on[key] = function(event) {
+                if (handler.prevent_default) {
+                  event.preventDefault();
+                }
 
-          if (rvtree.onKeydown) {
-            options.on.keydown = function(event) {
-              var rubyEvent = Object.assign(
-                {},
-                rvtree.onKeydown,
-                {args: [event.key].concat(rvtree.onKeydown.args)}
-              );
-              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rubyEvent)]);
-              render();
-            }
-          }
+                if (handler.stop_propagation) {
+                  event.stopPropagation();
+                }
 
-          if (rvtree.onInput) {
-            options.on.input = function(event) {
-              var args = rvtree.onInput.args.slice();
+                let args = [];
 
-              var includeProp;
+                for (let arg of handler.args) {
+                  if (arg.type === "constant") {
+                    args.push(arg.value);
+                  }
 
-              if (includeProp = rvtree.onInput.includeProp) {
-                args.unshift(event.target[includeProp]);
+                  if (arg.type === "event_data") {
+                    args.push(event[arg.key]);
+                  }
+
+                  if (arg.type === "target_data") {
+                    args.push(event.target[arg.key]);
+                  }
+                }
+
+                var handlerWithArgs = Object.assign(
+                  {},
+                  handler,
+                  {args}
+                );
+
+                if (handlerWithArgs.type) {
+                  Module.ccall("dispatch", "void", ["string"], [JSON.stringify(handlerWithArgs)]);
+                }
+                render();
               }
-
-              var rubyEvent = Object.assign(
-                {},
-                rvtree.onInput,
-                {args: args}
-              );
-
-              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rubyEvent)]);
-              render();
-            }
-          }
-
-          if (rvtree.onChange) {
-            options.on.change = function(event) {
-              var args = rvtree.onChange.args.slice();
-
-              var includeProp;
-
-              if (includeProp = rvtree.onChange.includeProp) {
-                args.unshift(event.target[includeProp]);
-              }
-
-              var rubyEvent = Object.assign(
-               {},
-                rvtree.onChange,
-                {args: args}
-              );
-
-              Module.ccall("dispatch", "void", ["string"], [JSON.stringify(rubyEvent)]);
-              render();
             }
           }
 

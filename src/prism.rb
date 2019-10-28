@@ -148,6 +148,8 @@ module Prism
         className = ""
         children = []
 
+        result = {}
+
         until args.empty?
           arg = args.shift
 
@@ -165,11 +167,16 @@ module Prism
           end
         end
 
-        options[:_type] = tag
-        options[:_class] = className
+        options.each do |key, value|
+          next if value.is_a?(EventHandler) || (key.to_s).chars.first == '_'
+          result[key] = value
+        end
+
+        result[:_type] = tag
+        result[:_class] = className
         options[:_children] = children || []
 
-        options[:_children] = options[:_children].compact.map do |child|
+        result[:_children] = options[:_children].compact.map do |child|
           if child.is_a?(Prism::Component)
             child.render
           elsif child.is_a?(String)
@@ -179,7 +186,27 @@ module Prism
           end
         end
 
-        options
+        result[:on] ||= {}
+        result[:on][:click] = options[:onClick].to_hash if options[:onClick]
+        result[:on][:change] = options[:onChange].to_hash if options[:onChange]
+        result[:on][:input] = options[:onInput].to_hash if options[:onInput]
+        result[:on][:mousedown] = options[:onMousedown].to_hash if options[:onMousedown]
+        result[:on][:mouseup] = options[:onMouseup].to_hash if options[:onMouseup]
+        result[:on][:keydown] = options[:onKeydown].to_hash if options[:onKeydown]
+        result[:on][:keyup] = options[:onKeyup].to_hash if options[:onKeyup]
+        result[:on][:scroll] = options[:onScroll].to_hash if options[:onScroll]
+
+        if options[:on]
+          event_handlers = {}
+
+          options[:on].each do |key, value|
+            event_handlers[key] = value.to_hash
+          end
+
+          result[:on] = event_handlers
+        end
+
+        result
       end
     end
 
@@ -187,27 +214,72 @@ module Prism
       {:type => "text", :content => t.to_s}
     end
 
-    def dispatch(sym, *args)
+    def call(method_name, *args)
       Prism.instances[object_id] = self # TODO - this is a memory leak
-      {:instance => object_id, :type => sym, :args => args, includeEvent: false}
+      EventHandler.new(object_id, method_name).with(*args)
     end
 
-    def dispatchEvent(sym, *args)
+    def stop_propagation
       Prism.instances[object_id] = self # TODO - this is a memory leak
-      {:instance => object_id, :type => sym, :args => args, includeEvent: true}
+      EventHandler.new(object_id, nil).stop_propagation
     end
 
-    def dispatchWith(prop, sym, *args)
+    def prevent_default
       Prism.instances[object_id] = self # TODO - this is a memory leak
-      {:instance => object_id, :type => sym, :args => args, includeProp: prop}
+      EventHandler.new(object_id, nil).prevent_default
     end
 
     def render
       raise "Unimplemented render method for #{self.class.name}"
     end
   end
-end
 
+  class EventHandler
+    attr_reader :method_name
+
+    def initialize(id, method_name, args = [], options = {})
+      @id = id
+      @method_name = method_name
+      @args = args
+      @options = {prevent_default: false, stop_propagation: false}.merge(options)
+    end
+
+    def with(*additionalArgs)
+      new_args = additionalArgs.map { |a| {type: :constant, value: a} }
+
+      EventHandler.new(@id, method_name, @args + new_args, @options)
+    end
+
+    def with_event_data(*property_names)
+      new_args = property_names.map { |item| {type: :event_data, key: item } }
+
+      EventHandler.new(@id, method_name, @args + new_args, @options)
+    end
+
+    def with_target_data(*items)
+      target_args = items.map { |item| {type: :target_data, key: item } }
+      EventHandler.new(@id, method_name, @args + target_args, @options)
+    end
+
+    def prevent_default
+      EventHandler.new(@id, method_name, @args, @options.merge(prevent_default: true))
+    end
+
+    def stop_propagation
+      EventHandler.new(@id, method_name, @args, @options.merge(stop_propagation: true))
+    end
+
+    def to_hash
+      {
+        instance: @id,
+        type: @method_name,
+        args: @args,
+        prevent_default: @options[:prevent_default],
+        stop_propagation: @options[:stop_propagation]
+      }
+    end
+  end
+end
 
 module DOM
   @@event_id = 0
