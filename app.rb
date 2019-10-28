@@ -244,47 +244,157 @@ class HelloRubySlide < Prism::Component
   end
 end
 
+class HelloRubyDrawnSlide < Prism::Component
+  attr_accessor :name
+
+  def initialize
+    @name = "World"
+  end
+
+  def render
+    div(".slide.name", [
+      img('.what-is-your-name', props: {src: 'assets/slide22-hello-name-top.svg'}),
+      div(".drawn-input", [
+        img(props: {src: 'assets/slide22-hello-name-background.svg'}),
+        input(onInput: dispatchWith(:value, :name=), props: {value: name}),
+        img(props: {src: 'assets/slide22-hello-name-box.svg'})
+      ]),
+      h3(name.length > 0 ? "Hello, #{name}!" : "Enter your name!")
+    ])
+  end
+end
+
+class TodoListSlide < Prism::Component
+  attr_accessor :new_todo
+  attr_reader :items
+
+  def initialize
+    @items = []
+  end
+
+  def add_todo_item
+    item = TodoItem.new(new_todo) { @items.delete(item) }
+
+    items << item
+
+    @new_todo = ""
+  end
+
+  def remove_completed
+    @items.reject!(&:completed?)
+  end
+
+  def render
+    div(".slide", [
+      div(".todo-list", [
+        input(".new-todo", onInput: dispatchWith(:value, :new_todo=), props: {value: new_todo}),
+        div(".controls", [
+          button(".add-todo", "Add Todo Item", onClick: dispatch(:add_todo_item)),
+          button("Remove Completed", onClick: dispatch(:remove_completed))
+        ]),
+        div(".summary", "#{items.count} items, #{items.select(&:completed?).count} completed"),
+        div(".todo-list-items", items)
+      ])
+    ])
+  end
+
+  private
+
+  class TodoItem < Prism::Component
+    attr_reader :todo
+    attr_writer :completed
+
+    def initialize(todo, &block)
+      @todo = todo
+      @completed = false
+      @remove = block
+    end
+
+    def completed?
+      @completed
+    end
+
+    def remove
+      @remove.call
+    end
+
+    def render
+      div(".todo-item", [
+        input(
+          '.complete',
+          props: {type: 'checkbox', checked: @completed},
+          onChange: dispatchWith(:checked, :completed=)
+        ),
+        span(
+          [text(@todo)],
+          style: {
+            "text-decoration": (
+              if completed?
+              then "line-through"
+              else "none"
+              end
+            )
+          }
+        ),
+        button("Remove", onClick: dispatch(:remove))
+      ])
+    end
+  end
+end
+
+
 class Slides < Prism::Component
   attr_reader :slides
 
   def initialize
     @slides = [
-      TitleSlide.new,
-      slide("A tale of two languages"),
-      slide("I love the browser"),
-      slide("Let's make browser apps with Ruby!"),
-      slide("The world isn't ready"),
-      slide("Suddenly, WebAssembly!"),
-      slide("The world still isn't ready!"),
-      slide("Matz to the rescue"),
-      slide("Putting all the pieces together"),
-      slide("Ruby, meet the browser"),
-      slide("Presenting: Prism"),
-      HelloRubySlide.new,
-      CounterListSlide.new,
+      image_slide("title.svg"),
+      image_slide('slide1-i-learned-ruby.svg'),
+      image_slide('slide2-i-learned-js.svg'),
+      image_slide('slide3-i-fell-in-love-with-the-browser.svg'),
+      image_slide('slide4-ruby-advantages.svg'),
+      image_slide('slide4-what-if-we-could-use-ruby.svg'),
+      image_slide('slide6-problem1.svg'),
+      image_slide('slide7-emscripten.svg'),
+      image_slide('slide8-problem2.svg'),
+      image_slide('slide9-matz-to-the-rescue.svg'),
+      image_slide('slide10-problem3.svg'),
+      image_slide('slide11-a-wild-webassembly-appears.svg'),
+      image_slide('slide12-what-a-browser-do.svg'),
+      image_slide('slide13-parse-optimize-generate.svg'),
+      image_slide('slide14-what-if-we-could-just.svg'),
+      image_slide('slide15-now-youre-cooking.svg'),
+      image_slide('slide16-only-one-problem-left.svg'),
+      image_slide('slide17-what-good-is-an-app-that-only-logs.svg'),
+      image_slide('slide19-the-same-again-but-better.svg'),
+      image_slide('slide20-presenting-prism.svg'),
+      image_slide('slide21-enough-talk-lets-dance.svg'),
+      HelloRubyDrawnSlide.new,
+      image_slide('slide23-demo-time.svg'),
+      image_slide('slide24-yay.svg'),
+      image_slide('slide25-yak-shaving.svg'),
+      image_slide('slide26-but-what-about.svg'),
+      image_slide('slide27-we-did-it.svg'),
+      image_slide('slide28-thanks.svg'),
+      TodoListSlide.new,
       HangmanSlide.new,
-      slide("So what still needs doing?"),
-      slide("But what about..."),
-      slide("Debugging"),
-      slide("Needing to compile"),
-      slide("Performance"),
-      slide("Stability"),
-      slide("Bundle size"),
-      slide("Old browsers"),
-      slide("The JS Ecosystem"),
-      slide("New thing to learn!"),
-      slide("Let's wrap it up"),
-      slide("You can wmake browser apps with Ruby!"),
-      slide("WebAssembly is good and getting better"),
-      slide("Go invent some cool stuff!")
     ]
 
     @index = 0
+
+    DOM.select('document').on('keydown') do |event|
+      keydown(event["key"])
+    end
   end
 
   def slide(content)
     div(".slide", [h2("", content)])
   end
+
+  def image_slide(src)
+    div(".slide", [img(props: {src: "assets/#{src}"})])
+  end
+
 
   def previous_slide
     @index -= 1 unless first_slide?
@@ -296,7 +406,7 @@ class Slides < Prism::Component
 
   def keydown(key)
     case key
-    when "ArrowRight", "Space"
+    when "ArrowRight", " "
       next_slide
     when "ArrowLeft"
       previous_slide
@@ -305,20 +415,19 @@ class Slides < Prism::Component
 
   def render
     div(".slides", {click: dispatch(:next_slide), onKeydown: dispatchEvent(:keydown), attrs: {tabIndex: 0}}, [
+      img(
+        ".control",
+        onClick: dispatch(:previous_slide),
+        props: {src: "assets/prev.svg"},
+        class: {hidden: first_slide?}
+      ),
       current_slide,
-      div(".controls", [
-        button(
-          "Previous",
-          onClick: dispatch(:previous_slide),
-          props: {disabled: first_slide?}
-        ),
-        "#{@index + 1}/#{slides.length}",
-        button(
-          "Next",
-          onClick: dispatch(:next_slide),
-          props: {disabled: last_slide?}
-        )
-      ])
+      img(
+        ".control",
+        onClick: dispatch(:next_slide),
+        props: {src: "assets/next.svg"},
+        class: {hidden: last_slide?}
+      )
     ])
   end
 

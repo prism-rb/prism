@@ -11,7 +11,7 @@
           font-family: Helvetica, arial, sans-serif;
           margin: 0;
           padding: none;
-          background: #fff6e8;
+          background: #CC342D10;
           color: #0e1f24;
         }
 
@@ -24,9 +24,15 @@
         .slides {
           height: 100%;
           display: flex;
-          flex-direction: column;
           justify-content: space-between;
           align-items: center;
+        }
+
+        .control {
+          opacity: 1;
+          flex-shrink: 0;
+          margin: 20px;
+          transition: opacity 0.1s linear;
         }
 
         .slide {
@@ -38,6 +44,16 @@
           align-items: center;
           font-size: 2.6em;
           margin: 1em;
+        }
+
+        .slide img {
+          max-height: 50vh;
+          max-width: 60vw;
+          flex-grow: 1;
+        }
+
+        .hidden {
+          opacity: 0;
         }
 
         .letters {
@@ -58,6 +74,36 @@
 
         button {
           font-size: 1em;
+        }
+
+        .what-is-your-name {
+          max-width: 40vw;
+        }
+
+        .drawn-input {
+          position: relative;
+        }
+
+        .drawn-input img {
+          position: absolute;
+          left: 0px;
+          top: 0px;
+          pointer-events: none;
+        }
+
+        .drawn-input input {
+          position: relative;
+          margin: 0px;
+          left: 12px;
+          top: 2px;
+          height: 50px;
+          background: none;
+          border: none;
+        }
+
+        .slide.name>img, .slide.name>h3, .slide.name>div {
+          flex-grow: 0;
+          margin: 0.5em;
         }
     </style>
 </head>
@@ -87,6 +133,26 @@
             return v;
           }, ' ');
         }
+
+const events = new Map();
+let eventId = -1;
+
+function getEventId(event) {
+  const id = (eventId++).toString();
+
+  events.set(id, event);
+
+  return id;
+}
+function preventDefault(id) {
+  const event = events.get(id);
+  
+  if (event) {
+    event.preventDefault();
+  } else {
+    throw new Error(`Tried to prevent default on event with id ${eventId} but was not found`);
+  }
+}
 
         function rubyVTreeToSnabbdom(rvtree) {
           if (rvtree.type === "text") { return rvtree.content; }

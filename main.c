@@ -16,7 +16,7 @@ mrb_state *mrb;
 
 
 mrb_value
-mrb_example_method(mrb_state *mrb, mrb_value self){
+add_event_listener(mrb_state *mrb, mrb_value self){
   mrb_value selector, event, id;
   mrb_get_args(mrb, "SSS", &selector, &event, &id);
 
@@ -38,17 +38,33 @@ mrb_example_method(mrb_state *mrb, mrb_value self){
       var element = elements[i];
 
       element.addEventListener(eventName, function(event) {
+        var eventId = getEventId(event);
+
         Module.ccall(
           'event',
           'void',
-          ['string', 'string'],
-          [stringifyEvent(event), id]
+          ['string', 'string', 'string'],
+          [stringifyEvent(event), id, eventId]
         );
 
         render();
       });
     };
   }, RSTRING_PTR(selector), RSTRING_PTR(event), RSTRING_PTR(id));
+  return mrb_nil_value();
+}
+
+mrb_value
+prevent_default(mrb_state *mrb, mrb_value self){
+  mrb_value id;
+  mrb_get_args(mrb, "S", &id);
+
+  EM_ASM_({
+    var id = UTF8ToString($1);
+
+    preventDefault(id);
+  }, RSTRING_PTR(id));
+
   return mrb_nil_value();
 }
 
@@ -65,8 +81,16 @@ main(int argc, const char * argv[])
     mrb,
     dom_class,
     "add_event_listener",
-    mrb_example_method,
+    add_event_listener,
     MRB_ARGS_REQ(3)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    dom_class,
+    "prevent_default",
+    prevent_default,
+    MRB_ARGS_REQ(1)
   );
 
   app = mrb_load_irep(mrb, bundle);
