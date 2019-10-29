@@ -19,27 +19,6 @@ function stringifyEvent(e) {
   }, ' ');
 }
 
-const events = new Map();
-let eventId = -1;
-
-function getEventId(event) {
-  const id = (eventId++).toString();
-
-  events.set(id, event);
-
-  return id;
-}
-
-function preventDefault(id) {
-  const event = events.get(id);
-
-  if (event) {
-    event.preventDefault();
-  } else {
-    throw new Error(`Tried to prevent default on event with id ${eventId} but was not found`);
-  }
-}
-
 function rubyVTreeToSnabbdom(rvtree) {
   if (rvtree.type === "text") { return rvtree.content; }
 
