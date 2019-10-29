@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 TEMPLATE = <<-TEMPLATE.strip
 class HelloWorld < Prism::Component
   attr_accessor :name
@@ -42,6 +44,14 @@ def init(path = "app.rb")
 end
 
 def build(files)
+  mrbc_path = `which mrbc`.split("\n").first
+  emcc_path = `which emcc`.split("\n").first
+
+  if (!mrbc_path || !emcc_path)
+    puts "Error: Please ensure you have mruby and emscripten installed and available on the $PATH.\n\n  mrbc: #{mrbc_path || 'Not found!'}\n  emcc: #{emcc_path || 'Not found! Do you need to source emsdk_env.sh?'}"
+    exit 1
+  end
+
   all_files = ["#{__dir__}/../src/prism.rb"] + files
   bundle = all_files.map { |f| File.read(f) }.join("\n")
 
@@ -62,15 +72,15 @@ def build(files)
       -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event']" \
       -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
       -s WASM=1 \
-      -I #{__dir__}/../mruby-include \
+      -I #{__dir__}/../mruby/include \
       -g4 \
       main.c \
-      #{__dir__}/../libmruby.a \
+      #{__dir__}/../mruby/build/emscripten/lib/libmruby.a \
       -o bundle.js
   `
 
   `cp #{__dir__}/../dist/prism.js ./prism.js`
-  File.write("./index.html", HTML_TEMPLATE) # TODO - there's a race condition here where the file is created between the previous statement and this one
+  File.write("./index.html", HTML_TEMPLATE) unless File.exists?("./index.html")
   `rm bundle.c bundle.rb main.c`
   puts "Compiled to build/"
 end
