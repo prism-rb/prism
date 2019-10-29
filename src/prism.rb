@@ -250,6 +250,10 @@ module Prism
       EventHandler.new(@id, method_name, @args + new_args, @options)
     end
 
+    def with_event
+      EventHandler.new(@id, method_name, @args + [{type: :event}], @options)
+    end
+
     def with_event_data(*property_names)
       new_args = property_names.map { |item| {type: :event_data, key: item } }
 

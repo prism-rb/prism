@@ -23,5 +23,5 @@ const proxy = http.createServer((req, res) => {
   res.end();
 });
 
-proxy.listen(3042, '127.0.0.1');
 console.log("Listening on localhost:3042");
+proxy.listen(3042, '127.0.0.1');

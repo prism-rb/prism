@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name        = 'prism-cli'
-  s.version     = '0.0.2'
+  s.version     = '0.0.3'
   s.date        = '2019-10-29'
   s.summary     = "Build frontend web apps with Ruby and Wasm"
-  s.description = "Build frontend web apps with Ruby and Wasm"
+  s.description = File.read("./README.md")
   s.authors     = ["Nick Johnstone"]
   s.email       = 'ncwjohnstone@gmail.com'
   s.executables << 'prism'

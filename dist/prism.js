@@ -831,6 +831,10 @@ function rubyVTreeToSnabbdom(rvtree) {
             args.push(arg.value);
           }
 
+          if (arg.type === "event") {
+            args.push(serializeEvent(event));
+          }
+
           if (arg.type === "event_data") {
             args.push(event[arg.key]);
           }
