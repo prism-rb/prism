@@ -774,6 +774,8 @@ function stringifyEvent(e) {
   }, ' ');
 }
 
+window.stringifyEvent = stringifyEvent;
+
 function rubyVTreeToSnabbdom(rvtree) {
   if (rvtree.type === "text") { return rvtree.content; }
 
