@@ -35,7 +35,7 @@ Prism apps are written in mruby. mruby is a lightweight implementation of Ruby t
 
 mruby is similar in many ways to cruby and will be a familiar experience for someone who has only used the mainline interpreter. The most notable exception is that mruby only supports syntax up to ruby 1.9, which means there are no keyword arguments or safe traversal operator.
 
-There are a number of other samll differences, and it's worth reviewing the [mruby limitations documentation](https://github.com/mruby/mruby/blob/master/doc/limitations.md).
+There are a number of other small differences, and it's worth reviewing the [mruby limitations documentation](https://github.com/mruby/mruby/blob/master/doc/limitations.md).
 
 If you run `prism init`, it will create a sample application that makes a good starting point. This is the code it outputs:
 
@@ -60,15 +60,19 @@ Prism.mount(HelloWorld.new)
 
 Let's break this down piece by piece.
 
+----------
+
 ```ruby
 class HelloWorld < Prism::Component
 ```
 
-Much like Rails, Prism provides most of it's functionality through inheriting from base classes.
+Much like Rails, Prism provides most of it's functionality through base classes that you should inherit from.
 
-The key concept in Prism is a Component, which should be familiar to anyone who has worked with JS frameworks like React.
+The key concept in Prism is a Component, which should be familiar to anyone who has worked with JS frameworks like React, Vue or similar.
 
 `Prism::Component` provides helper methods for creating virtual dom elements, and for handling events.
+
+----------
 
 ```ruby
   attr_accessor :name
@@ -80,6 +84,7 @@ The key concept in Prism is a Component, which should be familiar to anyone who 
 
 This is fairly standard Ruby, and there's nothing actually unique to Prism or mruby going on. Note that we're defining an `attr_accessor` rather than just an `attr_reader`, so that we can set the name directly when it changes.
 
+----------
 
 ```ruby
   def render
@@ -96,6 +101,7 @@ This should be familiar to anyone who has worked with React, Cycle.js or Elm. Th
 
 Prism's virtual dom is powered by `snabddom`, a tried and true lightweight JavaScript vdom library. For the most part, the API is simply passed through to snabbdom, so it's worth reading the [snabddom docs](https://github.com/mruby/mruby/blob/master/doc/limitations.md).
 
+----------
 
 ```ruby
   input(onInput: call(:name=).with_target_data(:value)),
@@ -109,6 +115,7 @@ The most interesting line in this example is the event handler for the `input` e
 
 You can also include data from the event or target element using `.with_event_data` and `.with_target_data`. These methods can be chained as needed.
 
+----------
 
 ```ruby
 Prism.mount(HelloWorld.new)
