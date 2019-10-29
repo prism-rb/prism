@@ -754,11 +754,11 @@ exports.default = vnode;
 
 },{}],11:[function(require,module,exports){
 var snabbdom = require('snabbdom');
-var patch = snabbdom.init([ 
-  require('snabbdom/modules/class').default, 
+var patch = snabbdom.init([
+  require('snabbdom/modules/class').default,
   require('snabbdom/modules/props').default,
   require('snabbdom/modules/style').default,
-  require('snabbdom/modules/eventlisteners').default, 
+  require('snabbdom/modules/eventlisteners').default,
 ]);
 snabbdom_h = require('snabbdom/h').default;
 
@@ -856,6 +856,8 @@ function render() {
 
   currentContainer = vtree;
 }
+
+window.render = render;
 
 window.Module = {
   preRun: [],

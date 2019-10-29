@@ -1,6 +1,4 @@
-bundle.rb
-bundle.c
-bundle.js
-bundle.wasm
+
+slides/build
 
 node_modules/
