@@ -6,6 +6,9 @@ bundle.rb: app.rb src/prism.rb
 bundle.c: bundle.rb
 	./mruby/bin/mrbc -Bbundle bundle.rb
 
+dist/prism.js: package.json package.json.lock src/prism.js
+	npx browserify src/prism.js -o dist/prism.js
+
 mruby-build:
 	cd mruby && make
 

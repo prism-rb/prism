@@ -1,0 +1,106 @@
+TEMPLATE = <<-TEMPLATE.strip
+class HelloWorld < Prism::Component
+  attr_accessor :name
+
+  def initialize(name = "World")
+    @name = name
+  end
+
+  def render
+    div(".hello-world", [
+      input(onInput: call(:name=).with_target_data(:value)),
+      div("Hello, \#{name}")
+    ])
+  end
+end
+
+Prism.mount(HelloWorld.new)
+TEMPLATE
+
+HTML_TEMPLATE = <<-HTML.strip
+<!DOCTYPE html>
+<html lang=en-us>
+
+<head>
+    <meta charset=utf-8>
+    <meta content="text/html; charset=utf-8" http-equiv=Content-Type>
+    <title>Hello World</title>
+</head>
+
+  <body>
+      <div id="root"></div>
+      <script src="prism.js"></script>
+      <script async src=bundle.js></script>
+  </body>
+</html>
+HTML
+
+def init(path = "app.rb")
+  fail "#{path} already exists" if File.exist?(path)
+  File.write(path, TEMPLATE) # TODO - there's a race condition here where the file is created between the previous statement and this one
+  puts "Created new Prism app at app.rb\n\nRun prism build #{path} to compile your app."
+end
+
+def build(files)
+  all_files = ["#{__dir__}/../src/prism.rb"] + files
+  bundle = all_files.map { |f| File.read(f) }.join("\n")
+
+  `mkdir -p build`
+  Dir.chdir("build")
+
+  File.write("./bundle.rb", bundle)
+
+  puts "Compiling ruby code to mruby bytecode..."
+
+  `mrbc -Bbundle bundle.rb`
+  `cp #{__dir__}/../main.c main.c`
+
+  puts "Compiling to Wasm..."
+  `
+    emcc \
+      -s ALLOW_MEMORY_GROWTH=1 \
+      -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event']" \
+      -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
+      -s WASM=1 \
+      -I #{__dir__}/../mruby-include \
+      -g4 \
+      main.c \
+      #{__dir__}/../libmruby.a \
+      -o bundle.js
+  `
+
+  `cp #{__dir__}/../dist/prism.js ./prism.js`
+  File.write("./index.html", HTML_TEMPLATE) # TODO - there's a race condition here where the file is created between the previous statement and this one
+  `rm bundle.c bundle.rb main.c`
+  puts "Compiled to build/"
+end
+
+def server
+  Dir.chdir("build")
+  `node #{__dir__}/../wasm-server.js`
+end
+
+def help
+  puts <<-HEREDOC.strip
+Usage: prism <command> [options]
+
+Commands:
+  init                     initializes a new prism application
+  build <entrypoint>       builds a prism application
+  server
+  HEREDOC
+end
+
+command, *rest = ARGV
+
+case command
+when "init"
+  init
+when "build"
+  rest = ["app.rb"] if rest.empty?
+  build(rest)
+when "server"
+  server
+else
+  help
+end
