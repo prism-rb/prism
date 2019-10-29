@@ -164,7 +164,7 @@ Takes no arguments, returns a `Prism::EventHandler` that does nothing but call `
 
 Takes no arguments, returns a `Prism::EventHandler` that does nothing but call `event.stopPropagation()`.
 
-
+---------
 
 #### **`Prism::EventHandler`**
 
