@@ -6,12 +6,17 @@
     <meta content="text/html; charset=utf-8" http-equiv=Content-Type>
     <title>Your Browser on Ruby</title>
     <style>
+        @font-face {
+          font-family: 'MyWebFont';
+          src: url('/assets/font/nick.ttf') format('truetype');
+        }
         html, body {
           height: 100%;
-          font-family: Helvetica, arial, sans-serif;
+          font-family: 'MyWebFont', serif;
+          font-weight: 300;
           margin: 0;
           padding: none;
-          background: #CC342D10;
+          background: white;
           color: #0e1f24;
         }
 
@@ -35,6 +40,10 @@
           transition: opacity 0.1s linear;
         }
 
+        .slide.name {
+          transform: scale(1.5, 1.5);
+        }
+
         .slide {
           height: 100%;
           max-width: 80%;
@@ -47,8 +56,8 @@
         }
 
         .slide img {
-          max-height: 50vh;
-          max-width: 60vw;
+          max-height: 75vh;
+          max-width: 75vw;
           flex-grow: 1;
         }
 
@@ -67,6 +76,7 @@
         }
 
         .slide input {
+          font-family: 'MyWebFont', serif;
           font-size: 0.6em;
           margin: 1em;
           width: 300px;
@@ -110,20 +120,20 @@
 
         .todo-list .drawn-input {
           position: absolute;
-          left: 165px;
-          top: 20px;
+          left: 200px;
+          top: 30px;
         }
 
         .todo-list-items {
           display: flex;
           flex-direction: column;
           position: absolute;
-          left: 15px;
-          top: 100px;
-          max-height: 230px;
+          left: 20px;
+          top: 120px;
+          max-height: 270px;
           overflow-y: scroll;
           overflow-x: hidden;
-          width: 480px;
+          width: 560px;
         }
 
         .trash {
@@ -165,9 +175,9 @@
 </head>
 
 <body>
-    <div id="root"></div>
-    <script src="prism.js"></script>
-    <script async src=bundle.js></script>
+  <div id="root"></div>
+  <script src="prism.js"></script>
+  <script async src=bundle.js></script>
 </body>
 
 </html>

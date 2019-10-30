@@ -63,7 +63,7 @@ class HelloRubyDrawnSlide < Prism::Component
     div(".slide.name", [
       img('.what-is-your-name', props: {src: 'assets/slide22-hello-name-top.svg'}),
       drawn_input,
-      h3(name.length > 0 ? "Hello, #{name}!" : "Enter your name!")
+      div('.greeting', name.length > 0 ? "Hello, #{name}!" : "Enter your name!")
     ])
   end
 
@@ -172,35 +172,40 @@ class Slides < Prism::Component
 
   def initialize
     @slides = [
-      image_slide("title.svg"),
-      image_slide('slide1-i-learned-ruby.svg'),
-      image_slide('slide2-i-learned-js.svg'),
-      image_slide('slide3-i-fell-in-love-with-the-browser.svg'),
-      image_slide('slide4-ruby-advantages.svg'),
-      image_slide('slide4-what-if-we-could-use-ruby.svg'),
-      image_slide('slide6-problem1.svg'),
-      image_slide('slide7-emscripten.svg'),
-      image_slide('slide8-problem2.svg'),
-      image_slide('slide9-matz-to-the-rescue.svg'),
-      image_slide('slide10-problem3.svg'),
-      image_slide('slide11-a-wild-webassembly-appears.svg'),
-      image_slide('slide12-what-a-browser-do.svg'),
-      image_slide('slide13-parse-optimize-generate.svg'),
-      image_slide('slide14-what-if-we-could-just.svg'),
-      image_slide('slide15-now-youre-cooking.svg'),
-      image_slide('slide16-only-one-problem-left.svg'),
-      image_slide('slide17-what-good-is-an-app-that-only-logs.svg'),
-      image_slide('slide19-the-same-again-but-better.svg'),
-      image_slide('slide20-presenting-prism.svg'),
-      image_slide('slide21-enough-talk-lets-dance.svg'),
+      image_slide("title.svg", "title"),
+      image_slide('slide1-i-learned-ruby.svg', "learned-ruby"),
+      image_slide('slide2-i-learned-js.svg', "learned-svg"),
+      image_slide('slide3-i-fell-in-love-with-the-browser.svg', "love-the-browser"),
+      image_slide('slide4-ruby-advantages.svg', "ruby-advantages"),
+      image_slide('slide4-what-if-we-could-use-ruby.svg', "what-if-we-could-use-ruby"),
+      image_slide('slide6-problem1.svg', 'problem1'),
+      image_slide('slide7-emscripten.svg', 'emscripten-slide'),
+      image_slide('slide8-problem2.svg', 'problem2',),
+      image_slide('slide9-matz-to-the-rescue.svg', 'matz-rescue'),
+      image_slide('slide10-problem3.svg', 'problem3'),
+      image_slide('slide11-a-wild-webassembly-appears.svg', 'wasm-appears'),
+      image_slide('slide12-what-a-browser-do.svg', 'what-a-browser-do'),
+      image_slide('slide13-parse-optimize-generate.svg', 'pog'),
+      image_slide('slide14-what-if-we-could-just.svg', 'what-if-we-could-just'),
+      image_slide('slide15-now-youre-cooking.svg', 'now-youre-cooking'),
+      image_slide('slide16-only-one-problem-left.svg', 'only-one-problem-left'),
+      image_slide('slide17-what-good-is-an-app-that-only-logs.svg', 'what-good'),
+      image_slide('architecture-old.svg', 'architecture'),
+      image_slide('slide19-the-same-again-but-better.svg', 'same-but-better'),
+      image_slide('architecture-new.svg', 'architecture'),
+      image_slide('slide20-presenting-prism.svg', 'presenting-prism'),
+      image_slide('slide21-enough-talk-lets-dance.svg', 'lets-dance'),
       HelloRubyDrawnSlide.new,
       TodoListSlide.new,
-      image_slide('slide23-demo-time.svg'),
-      image_slide('slide24-yay.svg'),
-      image_slide('slide25-yak-shaving.svg'),
-      image_slide('slide26-but-what-about.svg'),
-      image_slide('slide27-we-did-it.svg'),
-      image_slide('slide28-thanks.svg'),
+      image_slide('slide23-demo-time.svg', 'demo-time'),
+      image_slide('slide24-yay.svg', 'yay'),
+      image_slide('slide25-yak-shaving.svg', 'yak-shaving'),
+      image_slide('slide26-but-what-about.svg', 'but-what-about'),
+      image_slide('slide27-we-did-it.svg', 'we-did-it'),
+      image_slide('sustainable.svg', 'sustainable'),
+      image_slide('shameless-promotion.svg', 'shameless-promotion'),
+      image_slide('hello-raygun.svg', 'hello-raygun'),
+      image_slide('slide28-thanks.svg', 'thanks'),
     ]
 
     @index = 0
@@ -214,8 +219,10 @@ class Slides < Prism::Component
     div(".slide", [h2("", content)])
   end
 
-  def image_slide(src)
-    div(".slide", [img(props: {src: "assets/#{src}"})])
+  def image_slide(src, className = "")
+    classes = {}
+    classes[className] = true
+    div(".slide", {class: classes}, [img(props: {src: "assets/#{src}"})])
   end
 
 
