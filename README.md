@@ -124,6 +124,19 @@ Prism.mount(HelloWorld.new)
 The last line mounts the HelloWorld component. Prism is currently hardcoded to mount to an element with id `#root` on load. In future this will be configurable.
 
 
+### Components and State
+
+Prism aims to provide a component system that should feel very similar to most virtual dom based JavaScript frameworks.
+
+You can nest Prism components, and use instances of Prism components directly when rendering in place of dom elements.
+
+Prism has no explicit state management built in, preferring to rely on Ruby's built-in state management tools, primarily instance variables in class instances.
+
+Components in a Prism app persist in memory, and will often have multiple methods call over their lifetime.
+
+Larger Prism applications would likely benefit from adapting a more structured approach to managing certain parts of state, a la Redux.
+
+
 ### API
 
 #### **`Prism::Component`**
@@ -174,23 +187,23 @@ Represents a handler for an event, with a method to call and arguments to pass. 
 
 Adds arguments to an existing event handler.
 
-#### `#with_event`
+##### `#with_event`
 
 Add an event argument to the handler. When the method is called, a serialized version of the event will be passed.
 
-#### `#with_event_data(*properties)`
+##### `#with_event_data(*properties)`
 
 Add arguments that contain data from the event. The properties should be either a string or a symbol. One property you might want to extract from the event is `:key` for `keydown` events.
 
-#### `#with_target_data(*properties)`
+##### `#with_target_data(*properties)`
 
 Add arguments that contain data from the target element. The properties should be either a string or a symbol. You could for example extract the `:value` of an `input` or the `:checked` field of a tickbox.
 
-#### `#prevent_default`
+##### `#prevent_default`
 
 Calls `.preventDefault()` on the event when it occurs.
 
-#### `#stop_propagation`
+##### `#stop_propagation`
 
 Calls `.stopPropagation()` on the event when it occurs.
 
@@ -199,6 +212,11 @@ Calls `.stopPropagation()` on the event when it occurs.
 `call(:name=).with_target_data(:value)` - calls a setter with the content of the target element
 `call(:goto_page, 5).with_event` - calls a method with the number 5 as the first argument and the event data as the second
 
+#### `Prism.mount(component)`
+
+Takes an instance of a `Prism::Component` and returns a `Prism::MountPoint`.
+
+The `MountPoint` should be the result of the last expression in the file, as it is used by the Prism C and JS runtime to interact with the application.
 
 ### Future
 
@@ -219,6 +237,18 @@ As mentioned above, Prism is still in extremely early development. The following
 If you're interested in helping implement any of those features, or you want to contribute in any way, please make an issue or a pull request or just [get in touch with me](mailto:ncwjohnston@gmail.com).
 
 Prism is currently developed by a single person (who also has a lot of other ambitious projects). I would love to have some other people to help share the load. There's lots of low hanging fruit still to be plucked.
+
+### Supporting Prism Development
+
+Most open source projects are built on a mountain of unpaid labour. Even hugely successful projects that have good funding tend to have a history of excess unpaid labour to get to that point.
+
+Prism is taking a different approach, by launching with an Open Collective page. We're using Open Collective because it enables us to fund Prism as a project rather than one particular person. Funds in the Open Collective will only go towards future development.
+
+If you think this is a worthwhile project, please support us on Open Collective. If you think your company could benefit from Prism in the future, please advocate for your company to financially support Prism.
+
+My main goal around starting Prism with funding is that I want as much of the work that's done on Prism as possible to be reimbursed, no matter who's doing it. The other aspect is that I don't have very much spare time for projects but if I can get paid for my work I can do Prism as part of my day to day contract work.
+
+*[Support Prism on Open Collective]*(https://opencollective.com/prism)
 
 ### License
 
