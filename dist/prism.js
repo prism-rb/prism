@@ -58,7 +58,7 @@ exports.h = h;
 ;
 exports.default = h;
 
-},{"./is":3,"./vnode":10}],2:[function(require,module,exports){
+},{"./is":3,"./vnode":12}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function createElement(tagName) {
@@ -137,6 +137,62 @@ exports.primitive = primitive;
 },{}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var xlinkNS = 'http://www.w3.org/1999/xlink';
+var xmlNS = 'http://www.w3.org/XML/1998/namespace';
+var colonChar = 58;
+var xChar = 120;
+function updateAttrs(oldVnode, vnode) {
+    var key, elm = vnode.elm, oldAttrs = oldVnode.data.attrs, attrs = vnode.data.attrs;
+    if (!oldAttrs && !attrs)
+        return;
+    if (oldAttrs === attrs)
+        return;
+    oldAttrs = oldAttrs || {};
+    attrs = attrs || {};
+    // update modified attributes, add new attributes
+    for (key in attrs) {
+        var cur = attrs[key];
+        var old = oldAttrs[key];
+        if (old !== cur) {
+            if (cur === true) {
+                elm.setAttribute(key, "");
+            }
+            else if (cur === false) {
+                elm.removeAttribute(key);
+            }
+            else {
+                if (key.charCodeAt(0) !== xChar) {
+                    elm.setAttribute(key, cur);
+                }
+                else if (key.charCodeAt(3) === colonChar) {
+                    // Assume xml namespace
+                    elm.setAttributeNS(xmlNS, key, cur);
+                }
+                else if (key.charCodeAt(5) === colonChar) {
+                    // Assume xlink namespace
+                    elm.setAttributeNS(xlinkNS, key, cur);
+                }
+                else {
+                    elm.setAttribute(key, cur);
+                }
+            }
+        }
+    }
+    // remove removed attributes
+    // use `in` operator since the previous `for` iteration uses it (.i.e. add even attributes with undefined value)
+    // the other option is to remove all attributes with value == undefined
+    for (key in oldAttrs) {
+        if (!(key in attrs)) {
+            elm.removeAttribute(key);
+        }
+    }
+}
+exports.attributesModule = { create: updateAttrs, update: updateAttrs };
+exports.default = exports.attributesModule;
+
+},{}],5:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function updateClass(oldVnode, vnode) {
     var cur, name, elm = vnode.elm, oldClass = oldVnode.data.class, klass = vnode.data.class;
     if (!oldClass && !klass)
@@ -160,7 +216,46 @@ function updateClass(oldVnode, vnode) {
 exports.classModule = { create: updateClass, update: updateClass };
 exports.default = exports.classModule;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var CAPS_REGEX = /[A-Z]/g;
+function updateDataset(oldVnode, vnode) {
+    var elm = vnode.elm, oldDataset = oldVnode.data.dataset, dataset = vnode.data.dataset, key;
+    if (!oldDataset && !dataset)
+        return;
+    if (oldDataset === dataset)
+        return;
+    oldDataset = oldDataset || {};
+    dataset = dataset || {};
+    var d = elm.dataset;
+    for (key in oldDataset) {
+        if (!dataset[key]) {
+            if (d) {
+                if (key in d) {
+                    delete d[key];
+                }
+            }
+            else {
+                elm.removeAttribute('data-' + key.replace(CAPS_REGEX, '-$&').toLowerCase());
+            }
+        }
+    }
+    for (key in dataset) {
+        if (oldDataset[key] !== dataset[key]) {
+            if (d) {
+                d[key] = dataset[key];
+            }
+            else {
+                elm.setAttribute('data-' + key.replace(CAPS_REGEX, '-$&').toLowerCase(), dataset[key]);
+            }
+        }
+    }
+}
+exports.datasetModule = { create: updateDataset, update: updateDataset };
+exports.default = exports.datasetModule;
+
+},{}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function invokeHandler(handler, vnode, event) {
@@ -256,7 +351,7 @@ exports.eventListenersModule = {
 };
 exports.default = exports.eventListenersModule;
 
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function updateProps(oldVnode, vnode) {
@@ -283,7 +378,7 @@ function updateProps(oldVnode, vnode) {
 exports.propsModule = { create: updateProps, update: updateProps };
 exports.default = exports.propsModule;
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // Bindig `requestAnimationFrame` like this fixes a bug in IE/Edge. See #360 and #409.
@@ -380,7 +475,7 @@ exports.styleModule = {
 };
 exports.default = exports.styleModule;
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var vnode_1 = require("./vnode");
@@ -693,7 +788,7 @@ function init(modules, domApi) {
 }
 exports.init = init;
 
-},{"./h":1,"./htmldomapi":2,"./is":3,"./thunk":9,"./vnode":10}],9:[function(require,module,exports){
+},{"./h":1,"./htmldomapi":2,"./is":3,"./thunk":11,"./vnode":12}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var h_1 = require("./h");
@@ -741,7 +836,7 @@ exports.thunk = function thunk(sel, key, fn, args) {
 };
 exports.default = exports.thunk;
 
-},{"./h":1}],10:[function(require,module,exports){
+},{"./h":1}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function vnode(sel, data, children, text, elm) {
@@ -752,13 +847,15 @@ function vnode(sel, data, children, text, elm) {
 exports.vnode = vnode;
 exports.default = vnode;
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var snabbdom = require('snabbdom');
 var patch = snabbdom.init([
   require('snabbdom/modules/class').default,
+  require('snabbdom/modules/attributes').default,
   require('snabbdom/modules/props').default,
   require('snabbdom/modules/style').default,
   require('snabbdom/modules/eventlisteners').default,
+  require('snabbdom/modules/dataset').default
 ]);
 snabbdom_h = require('snabbdom/h').default;
 
@@ -877,4 +974,4 @@ window.Module = {
 };
 
 
-},{"snabbdom":8,"snabbdom/h":1,"snabbdom/modules/class":4,"snabbdom/modules/eventlisteners":5,"snabbdom/modules/props":6,"snabbdom/modules/style":7}]},{},[11]);
+},{"snabbdom":10,"snabbdom/h":1,"snabbdom/modules/attributes":4,"snabbdom/modules/class":5,"snabbdom/modules/dataset":6,"snabbdom/modules/eventlisteners":7,"snabbdom/modules/props":8,"snabbdom/modules/style":9}]},{},[13]);

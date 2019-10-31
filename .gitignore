@@ -1,4 +1,8 @@
+.DS_Store
 
-slides/build
+slides/build/*.wasm
+slides/build/*.js
+slides/build/*.wast
+slides/build/*.map
 
 node_modules/
