@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+const port = parseInt(process.argv[2], 10) || 3042;
 const proxy = http.createServer((req, res) => {
   let p = path.join('.', req.url);
 
@@ -23,5 +24,5 @@ const proxy = http.createServer((req, res) => {
   res.end();
 });
 
-console.log("Listening on localhost:3042");
-proxy.listen(3042, '127.0.0.1');
+console.log(`Listening on localhost:${port}`);
+proxy.listen(port, '127.0.0.1');

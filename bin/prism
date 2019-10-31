@@ -85,9 +85,10 @@ def build(files)
   puts "Compiled to build/"
 end
 
-def server
+def server(port = 3042)
   Dir.chdir("build")
-  `node #{__dir__}/../wasm-server.js`
+  puts "Listening on localhost:#{port}"
+  `node #{__dir__}/../wasm-server.js #{port}`
 end
 
 def help
@@ -110,7 +111,11 @@ when "build"
   rest = ["app.rb"] if rest.empty?
   build(rest)
 when "server"
-  server
+  if rest.empty?
+    server
+  else
+    server(rest.first.to_i)
+  end
 else
   help
 end
