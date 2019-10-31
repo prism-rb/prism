@@ -166,6 +166,19 @@ class TodoListSlide < Prism::Component
   end
 end
 
+class TweetSlide < Prism::Component
+
+  def embed
+    '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Dear Twitter: I am up to no good again.<br><br>React-style components written in Ruby, running on the client via WebAssembly and mruby.<br><br>Still completely undecided as to whether or not this is a good idea! <a href="https://t.co/KVkC3rsUe2">pic.twitter.com/KVkC3rsUe2</a></p>&mdash; Nick Johnstone (@widdnz) <a href="https://twitter.com/widdnz/status/1112937763383308289?ref_src=twsrc%5Etfw">April 2, 2019</a><video controls preload="none" playsinline style="background-color: black;" src="assets/tweet.mp4"></video></blockquote>'
+  end
+
+  def render
+    div('.slide.tweet-slide', [
+      div(props: {innerHTML: embed}),
+      script({props: {src: 'widgets.js', async: true}})
+    ])
+  end
+end
 
 class Slides < Prism::Component
   attr_reader :slides
@@ -176,8 +189,11 @@ class Slides < Prism::Component
       image_slide('slide1-i-learned-ruby.svg', "learned-ruby"),
       image_slide('slide2-i-learned-js.svg', "learned-svg"),
       image_slide('slide3-i-fell-in-love-with-the-browser.svg', "love-the-browser"),
-      image_slide('slide4-ruby-advantages.svg', "ruby-advantages"),
       image_slide('slide4-what-if-we-could-use-ruby.svg', "what-if-we-could-use-ruby"),
+        # opal - strings are js strings, immutable
+        # numbers are js numbers, doesn't actually have integers
+        # symbols and strings are both just js strings
+      image_slide('slide4-ruby-advantages.svg', "ruby-advantages"),
       image_slide('slide6-problem1.svg', 'problem1'),
       image_slide('slide7-emscripten.svg', 'emscripten-slide'),
       image_slide('slide8-problem2.svg', 'problem2',),
@@ -188,13 +204,13 @@ class Slides < Prism::Component
       image_slide('slide13-parse-optimize-generate.svg', 'pog'),
       image_slide('slide14-what-if-we-could-just.svg', 'what-if-we-could-just'),
       image_slide('slide15-now-youre-cooking.svg', 'now-youre-cooking'),
+      image_slide('slide20-presenting-prism.svg', 'presenting-prism'),
+      # TODO - add "so I did it" with tweet embed
+      TweetSlide.new,
       image_slide('slide16-only-one-problem-left.svg', 'only-one-problem-left'),
-      image_slide('slide17-what-good-is-an-app-that-only-logs.svg', 'what-good'),
       image_slide('architecture-old.svg', 'architecture'),
       image_slide('slide19-the-same-again-but-better.svg', 'same-but-better'),
       image_slide('architecture-new.svg', 'architecture'),
-      image_slide('slide20-presenting-prism.svg', 'presenting-prism'),
-      image_slide('slide21-enough-talk-lets-dance.svg', 'lets-dance'),
       HelloRubyDrawnSlide.new,
       TodoListSlide.new,
       image_slide('slide23-demo-time.svg', 'demo-time'),

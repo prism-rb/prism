@@ -171,13 +171,62 @@
           flex-grow: 0;
           margin: 0.5em;
         }
+
+blockquote.twitter-tweet {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 16px;
+  border-color: #eee #ddd #bbb;
+  border-radius: 5px;
+  border-style: solid;
+  border-width: 1px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  margin: 10px 5px;
+  padding: 0 16px 16px 16px;
+  max-width: 468px;
+}
+
+blockquote.twitter-tweet p {
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 20px;
+}
+
+blockquote.twitter-tweet a {
+  color: blue;
+  font-weight: normal;
+  text-decoration: none;
+  outline: 0 none;
+}
+
+blockquote.twitter-tweet a:hover,
+blockquote.twitter-tweet a:focus {
+  text-decoration: underline;
+}
+
+        .tweet-slide {
+          transform: scale(1.3, 1.3);
+        }
+
+        video {
+          max-width: 100%;
+          max-height: 100%;
+          width: 100%;
+          height: 100%;
+        }
     </style>
 </head>
 
 <body>
   <div id="root"></div>
-  <script src="prism.js"></script>
-  <script async src=bundle.js></script>
+  <script type="text/javascript" src="prism.js"></script>
+  <script type="text/javascript" async src=bundle.js></script>
+  <script type="text/javascript">
+    document.body.addEventListener('dblclick', () => {
+      document.body.requestFullscreen();
+    });
+  </script>
 </body>
 
 </html>
