@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'prism-cli'
-  s.version     = '0.0.6'
+  s.version     = '0.0.7'
   s.date        = '2019-10-29'
   s.summary     = "Build frontend web apps with Ruby and Wasm"
   s.description = File.read("./README.md")
@@ -16,6 +16,6 @@ Gem::Specification.new do |s|
   s.files += Dir.glob("src/*.rb")
   s.files += Dir.glob("dist/*")
   s.files += Dir.glob("mruby/include/**/*");
-  s.homepage    = 'https://rubygems.org/gems/prism-cli'
+  s.homepage    = 'https://github.com/prism/prism-rb'
   s.license     = 'MIT'
 end

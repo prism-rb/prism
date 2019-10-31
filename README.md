@@ -1,11 +1,11 @@
 
 ## Prism
 
-Build React-style web apps with Ruby and WebAssembly 
+Build frontend web apps with Ruby and WebAssembly 
 
 ### Introduction
 
-Prism is a tool that uses [mruby](https://github.com/mruby/mruby) and [emscripten](https://emscripten.org/) to compile ruby code to WebAssembly. It also provides a runtime layer for working with the DOM and events, so you can use it make SPAs.
+Prism is a framework that helps you make frontend web applications with Ruby and WebAssembly. It uses [mruby](https://github.com/mruby/mruby) and [emscripten](https://emscripten.org/) to compile ruby code to WebAssembly. It also provides a runtime layer for working with the DOM and events.
 
 ⚡️ Prism is currently in extremely early alpha. Expect bugs, breaking API changes, missing functionality and rough edges. ⚡️
 
