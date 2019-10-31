@@ -248,7 +248,7 @@ If you think this is a worthwhile project, please support us on Open Collective.
 
 My main goal around starting Prism with funding is that I want as much of the work that's done on Prism as possible to be reimbursed, no matter who's doing it. The other aspect is that I don't have very much spare time for projects but if I can get paid for my work I can do Prism as part of my day to day contract work.
 
-*[Support Prism on Open Collective](https://opencollective.com/prism)*
+**[Support Prism on Open Collective](https://opencollective.com/prism)**
 
 ### License
 
