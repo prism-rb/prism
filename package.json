@@ -4,6 +4,8 @@
   "main": "test.js",
   "dependencies": {
     "asm-dom": "^0.6.3",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
     "snabbdom": "^0.7.3"
   },
   "devDependencies": {

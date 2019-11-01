@@ -52,10 +52,25 @@ add_event_listener(mrb_state *mrb, mrb_value self){
   return mrb_nil_value();
 }
 
+mrb_value
+http_request(mrb_state *mrb, mrb_value self){
+  mrb_value url;
+  mrb_get_args(mrb, "S", &url);
+
+  EM_ASM_({
+      const response = fetch(UTF8ToString($0));
+
+      response.then(r => r.text()).then(console.log)
+        }, RSTRING_PTR(url));
+  return mrb_nil_value();
+}
+
+
 int
 main(int argc, const char * argv[])
 {
   struct RClass *dom_class;
+  struct RClass *http_class;
 
   mrb = mrb_open();
 
@@ -68,6 +83,15 @@ main(int argc, const char * argv[])
     add_event_listener,
     MRB_ARGS_REQ(3)
   );
+
+  http_class = mrb_define_class(mrb, "InternalHttp", mrb->object_class);
+  mrb_define_class_method(
+                          mrb,
+                          http_class,
+                          "http_request",
+                          http_request,
+                          MRB_ARGS_REQ(1)
+                          );
 
   app = mrb_load_irep(mrb, bundle);
   mrb_gc_register(mrb, app);

@@ -4,5 +4,6 @@ slides/build/*.wasm
 slides/build/*.js
 slides/build/*.wast
 slides/build/*.map
+examples/build/
 
 node_modules/

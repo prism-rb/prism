@@ -1,6 +1,6 @@
 PHONY: bundle.js
 
-dist/prism.js: package.json package.json.lock src/prism.js
+dist/prism.js:
 	npx browserify src/prism.js -o dist/prism.js
 
 mruby-build:

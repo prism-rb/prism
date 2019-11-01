@@ -319,3 +319,9 @@ module DOM
     end
   end
 end
+
+module Http
+  def self.get(url)
+    InternalHttp.http_request(url)
+  end
+end
