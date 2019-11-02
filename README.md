@@ -13,13 +13,27 @@ Prism is a framework that helps you make frontend web applications with Ruby and
 
 ### Getting started
 
-Prism requires that you have both [mruby](https://github.com/mruby/mruby) and [emscripten](https://emscripten.org/) installed and available on your path.
+Prism requires that you have both [mruby](https://github.com/mruby/mruby) and [emscripten](https://emscripten.org/) `v1.38.46` installed and available on your path.
 
 You can install mruby through your preferred package manager, such as homebrew, apt-get or nix.
 
-Package managers often have outdated versions of emscripten, so it's recommended that you install via `emsdk`. Instructions are available on the [emscripten website](https://emscripten.org/docs/getting_started/downloads.html).
+Package managers often have outdated versions of emscripten, so it's recommended that you install via `emsdk`.
 
-You can install Prism using `gem install prism-cli`.
+Essentially you will need to do something like this:
+
+```bash
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install 1.38.46
+./emsdk active 1.38.46
+source ./emsdk_env.sh
+```
+
+In future when you want to build a Prism project, you'll need to ensure you've sourced `emsdk_env.sh` first, either in your shell profile or manually before running `prism build`.
+
+Further instructions are available on the [emscripten website](https://emscripten.org/docs/getting_started/downloads.html).
+
+You can install Prism from RubyGems using `gem install prism-cli`.
 
 ### CLI Usage
 
