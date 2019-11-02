@@ -1,6 +1,8 @@
 
 ## Prism
 
+[![Join the chat at https://gitter.im/prism-rb/prism](https://badges.gitter.im/prism-rb/prism.svg)](https://gitter.im/prism-rb/prism?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Build frontend web apps with Ruby and WebAssembly 
 
 ### Introduction
