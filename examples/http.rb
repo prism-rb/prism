@@ -1,25 +1,30 @@
-class HttpExample < Prism::Component
+class HTTPExample < Prism::Component
+  TARGET = "http://localhost:9001/"
+
   attr_accessor :name
 
   def initialize(name = "World")
     @name = name
+    @status = nil
   end
 
   def make_request
-    # make a request
-    target = "http://localhost:9001/"
+    @status = "Loading..."
 
-    Http.get(target) do |response|
-      puts response
+    HTTP.get(TARGET) do |response|
+      @status = response.body
     end
   end
 
   def render
-    button(
-      "Fire the Maid",
-      onClick: call(:make_request)
-    )
+    div([
+      button(
+        "Make request!",
+        onClick: call(:make_request)
+      ),
+      div("Result: #{@status || 'Not yet loaded'}")
+    ])
   end
 end
 
-Prism.mount(HttpExample.new)
+Prism.mount(HTTPExample.new)

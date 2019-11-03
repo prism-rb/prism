@@ -54,23 +54,30 @@ add_event_listener(mrb_state *mrb, mrb_value self){
 
 mrb_value
 http_request(mrb_state *mrb, mrb_value self){
-  mrb_value url;
-  mrb_get_args(mrb, "S", &url);
+  mrb_value url, id;
+  mrb_get_args(mrb, "SS", &url, &id);
 
   EM_ASM_({
-      const response = fetch(UTF8ToString($0));
+    const response = fetch(UTF8ToString($0));
+    const id = UTF8ToString($1);
 
-      response.then(r => r.text()).then(console.log)
-        }, RSTRING_PTR(url));
+    response.then(r => r.text()).then(text => {
+      Module.ccall('http_response',
+        'void',
+        ['string', 'string'],
+        [JSON.stringify({body: text}), id]
+      );
+
+      render();
+    });
+  }, RSTRING_PTR(url), RSTRING_PTR(id));
   return mrb_nil_value();
 }
-
 
 int
 main(int argc, const char * argv[])
 {
-  struct RClass *dom_class;
-  struct RClass *http_class;
+  struct RClass *dom_class, *http_class;
 
   mrb = mrb_open();
 
@@ -84,14 +91,14 @@ main(int argc, const char * argv[])
     MRB_ARGS_REQ(3)
   );
 
-  http_class = mrb_define_class(mrb, "InternalHttp", mrb->object_class);
+  http_class = mrb_define_class(mrb, "InternalHTTP", mrb->object_class);
   mrb_define_class_method(
-                          mrb,
-                          http_class,
-                          "http_request",
-                          http_request,
-                          MRB_ARGS_REQ(1)
-                          );
+    mrb,
+    http_class,
+    "http_request",
+    http_request,
+    MRB_ARGS_REQ(1)
+  );
 
   app = mrb_load_irep(mrb, bundle);
   mrb_gc_register(mrb, app);
@@ -123,6 +130,17 @@ void event(char* message, char* id) {
   mrb_value str = mrb_str_new_cstr(mrb, message);
   mrb_value str2 = mrb_str_new_cstr(mrb, id);
   mrb_funcall(mrb, app, "event", 2, str, str2);
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+}
+
+void http_response(char* text, char* id) {
+  mrb_value str = mrb_str_new_cstr(mrb, text);
+  mrb_value str2 = mrb_str_new_cstr(mrb, id);
+  mrb_funcall(mrb, app, "http_response", 2, str, str2);
 
   if (mrb->exc) {
     mrb_print_error(mrb);
