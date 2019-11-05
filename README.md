@@ -25,7 +25,7 @@ Essentially you will need to do something like this:
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
 ./emsdk install 1.38.46
-./emsdk active 1.38.46
+./emsdk activate 1.38.46
 source ./emsdk_env.sh
 ```
 
