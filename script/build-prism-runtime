@@ -22,8 +22,8 @@ puts "Compiling to Wasm..."
     -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event', '_http_response', '_load']" \
     -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
     -s WASM=1 \
+    -Oz \
     -I #{__dir__}/../mruby/include \
-    -g4 \
     main.c \
     #{__dir__}/../mruby/build/emscripten/lib/libmruby.a \
     -o bundle.js
