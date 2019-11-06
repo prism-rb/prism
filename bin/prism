@@ -40,7 +40,7 @@ HTML
 def init(path = "app.rb")
   fail "#{path} already exists" if File.exist?(path)
   File.write(path, TEMPLATE) # TODO - there's a race condition here where the file is created between the previous statement and this one
-  puts "Created new Prism app at app.rb\n\nRun prism build #{path} to compile your app."
+  puts "Created new Prism app at app.rb\n\nRun prism server to see your app."
 end
 
 def server(port = 3042)
@@ -56,9 +56,8 @@ def help
 Usage: prism <command> [options]
 
 Commands:
-  init                     initializes a new prism application
-  build <entrypoint>       builds a prism application
-  server
+  init [<path>]              initializes a new prism application at the given path, or ./app.rb if not provided
+  server [<port>]            runs a dev server on the given port, or 3042 if not provided
   HEREDOC
 end
 

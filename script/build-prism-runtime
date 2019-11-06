@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+mrbc_path = `which mrbc`.split("\n").first
+emcc_path = `which emcc`.split("\n").first
+
+if (!mrbc_path || !emcc_path)
+  puts "Error: Please ensure you have mruby and emscripten installed and available on the $PATH.\n\n  mrbc: #{mrbc_path || 'Not found!'}\n  emcc: #{emcc_path || 'Not found! Do you need to source emsdk_env.sh?'}"
+  exit 1
+end
+
+`mkdir -p build`
+Dir.chdir("build")
+
+puts "Compiling ruby code to mruby bytecode..."
+
+`cp #{__dir__}/../main.c main.c`
+
+puts "Compiling to Wasm..."
+`
+  emcc \
+    -s ALLOW_MEMORY_GROWTH=1 \
+    -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event', '_http_response', '_load']" \
+    -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
+    -s WASM=1 \
+    -I #{__dir__}/../mruby/include \
+    -g4 \
+    main.c \
+    #{__dir__}/../mruby/build/emscripten/lib/libmruby.a \
+    -o bundle.js
+`
+
+`rm main.c`
+puts "Compiled to build/"
