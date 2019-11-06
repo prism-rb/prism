@@ -43,51 +43,12 @@ def init(path = "app.rb")
   puts "Created new Prism app at app.rb\n\nRun prism build #{path} to compile your app."
 end
 
-def build(files)
-  mrbc_path = `which mrbc`.split("\n").first
-  emcc_path = `which emcc`.split("\n").first
-
-  if (!mrbc_path || !emcc_path)
-    puts "Error: Please ensure you have mruby and emscripten installed and available on the $PATH.\n\n  mrbc: #{mrbc_path || 'Not found!'}\n  emcc: #{emcc_path || 'Not found! Do you need to source emsdk_env.sh?'}"
-    exit 1
-  end
-
-  all_files = ["#{__dir__}/../src/prism.rb"] + files
-  bundle = all_files.map { |f| File.read(f) }.join("\n")
-
-  `mkdir -p build`
-  Dir.chdir("build")
-
-  File.write("./bundle.rb", bundle)
-
-  puts "Compiling ruby code to mruby bytecode..."
-
-  `cp #{__dir__}/../main.c main.c`
-
-  puts "Compiling to Wasm..."
-  `
-    emcc \
-      -s ALLOW_MEMORY_GROWTH=1 \
-      -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event', '_http_response', '_load']" \
-      -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
-      -s WASM=1 \
-      -I #{__dir__}/../mruby/include \
-      -g4 \
-      main.c \
-      #{__dir__}/../mruby/build/emscripten/lib/libmruby.a \
-      -o bundle.js
-  `
-
-  `cp #{__dir__}/../dist/prism.js ./prism.js`
-  File.write("./index.html", HTML_TEMPLATE) unless File.exists?("./index.html")
-  `rm main.c`
-  puts "Compiled to build/"
-end
-
 def server(port = 3042)
-  Dir.chdir("build")
-  puts "Listening on localhost:#{port}"
-  `node #{__dir__}/../wasm-server.js #{port}`
+  IO.popen("node #{__dir__}/../wasm-server.js #{port}") do |f|
+    until f.eof?
+      puts f.gets
+    end
+  end
 end
 
 def help

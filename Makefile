@@ -1,5 +1,5 @@
-dist/prism.js: src/prism.js
-	npx browserify src/prism.js -o dist/prism.js
+build/prism.js: src/prism.js
+	npx browserify src/prism.js -o build/prism.js
 
 runtime:
 	./script/build-prism-runtime

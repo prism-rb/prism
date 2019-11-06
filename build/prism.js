@@ -1,4 +1,4 @@
-function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var vnode_1 = require("./vnode");
@@ -943,7 +943,19 @@ function rubyVTreeToSnabbdom(rvtree) {
   );
 }
 
-var currentContainer = document.getElementById('root');
+
+var currentContainer;
+var allLoaded = false;
+var modulesToLoad = [];
+
+function run(element, main) {
+  currentContainer = document.getElementById('root');
+  modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
+
+  load(modulesToLoad, main);
+}
+
+window.Prism = {run};
 
 function render() {
   const rvtree = JSON.parse(Module.ccall("render", "string", []));
@@ -956,30 +968,57 @@ function render() {
 
 window.render = render;
 
-function load() {
-  fetch("bundle.rb").then(r => r.text()).then(function (text) {
-    FS.writeFile("./bundle.rb", text);
-    Module.ccall("load", "void", ["string"], ["bundle.rb"]);
-    render();
+function fetchAndLoad(name) {
+  return fetch(name).then(r => r.text().then(t => ({ok: r.ok, text: t}))).then(({ok, text}) => {
+    if (!ok) {
+      throw new Error(`Prism: Could not load ${name}`, text);
+    }
+
+    return {name, text};
   });
 }
 
-window.Module = {
-  preRun: [],
-  postRun: [ load ],
-  print: function() {
-    return function(e) {
-      1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.log(e)
-    }
-  }(),
-  printErr: function(e) {
-    1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.error(e)
-  },
-  canvas: function() {}(),
-  setStatus: function() {},
-  totalDependencies: 0,
-  monitorRunDependencies: function(e) {}
-};
+function load(modulesToLoad, main) {
+  modulePromise.then(() => {
+    Promise.all(modulesToLoad).then((modules) => {
+      for (let m of modules) {
+        const parts = m.name.split('/').filter(a => a.trim() !== '');
 
+        const directories = parts.slice(0, -1);
+        const basename = parts.slice(-1)[0];
+
+        const pwd = [];
+        for (let d of directories) {
+          FS.mkdir('./' + pwd.concat(d).join('/'));
+          pwd.push(d);
+        }
+
+        FS.writeFile(`./${m.name}`, m.text);
+      }
+
+      Module.ccall("load", "void", ["string"], [main]);
+      render();
+    });
+  });
+}
+
+const modulePromise = new Promise((resolve, reject) => {
+  window.Module = {
+    preRun: [],
+    postRun: [ resolve ],
+    print: function() {
+      return function(e) {
+        1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.log(e)
+      }
+    }(),
+    printErr: function(e) {
+      1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.error(e)
+    },
+    canvas: function() {}(),
+    setStatus: function() {},
+    totalDependencies: 0,
+    monitorRunDependencies: function(e) {}
+  };
+});
 
 },{"snabbdom":10,"snabbdom/h":1,"snabbdom/modules/attributes":4,"snabbdom/modules/class":5,"snabbdom/modules/dataset":6,"snabbdom/modules/eventlisteners":7,"snabbdom/modules/props":8,"snabbdom/modules/style":9}]},{},[13]);

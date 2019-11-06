@@ -108,9 +108,10 @@ mrb_value load_file(char* name) {
   mrb_value v;
   FILE *fp = fopen(name, "r");
   if (fp == NULL) {
-    printf("Cannot open main file: %s\n", name);
+    printf("Cannot open file: %s\n", name);
     return mrb_nil_value();
   }
+  printf("[Prism] Loading: %s\n", name);
   mrbc_filename(mrb, c, name);
   v = mrb_load_file_cxt(mrb, fp, c);
   fclose(fp);
@@ -129,7 +130,7 @@ void load(char* main) {
     mrb_load_file_cxt(mrb, lfp, c);
     fclose(lfp);
   }*/
-  load_file("prism.rb");
+  load_file("prism-ruby/prism.rb");
   app = load_file(main);
   mrb_gc_register(mrb, app);
 }

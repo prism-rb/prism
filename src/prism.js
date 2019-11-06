@@ -93,7 +93,19 @@ function rubyVTreeToSnabbdom(rvtree) {
   );
 }
 
-var currentContainer = document.getElementById('root');
+
+var currentContainer;
+var allLoaded = false;
+var modulesToLoad = [];
+
+function run(element, main) {
+  currentContainer = document.getElementById('root');
+  modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
+
+  load(modulesToLoad, main);
+}
+
+window.Prism = {run};
 
 function render() {
   const rvtree = JSON.parse(Module.ccall("render", "string", []));
@@ -116,33 +128,45 @@ function fetchAndLoad(name) {
   });
 }
 
-const modulesToLoad = [fetchAndLoad("prism.rb"), fetchAndLoad("http.rb")];
+function load(modulesToLoad, main) {
+  modulePromise.then(() => {
+    Promise.all(modulesToLoad).then((modules) => {
+      for (let m of modules) {
+        const parts = m.name.split('/').filter(a => a.trim() !== '');
 
-function load() {
-  Promise.all(modulesToLoad).then((modules) => {
-    for (let m of modules) {
-      FS.writeFile(`./${m.name}`, m.text);
-    }
+        const directories = parts.slice(0, -1);
+        const basename = parts.slice(-1)[0];
 
-    Module.ccall("load", "void", ["string"], ["http.rb"]);
-    render();
+        const pwd = [];
+        for (let d of directories) {
+          FS.mkdir('./' + pwd.concat(d).join('/'));
+          pwd.push(d);
+        }
+
+        FS.writeFile(`./${m.name}`, m.text);
+      }
+
+      Module.ccall("load", "void", ["string"], [main]);
+      render();
+    });
   });
 }
 
-window.Module = {
-  preRun: [],
-  postRun: [ load ],
-  print: function() {
-    return function(e) {
-      1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.log(e)
-    }
-  }(),
-  printErr: function(e) {
-    1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.error(e)
-  },
-  canvas: function() {}(),
-  setStatus: function() {},
-  totalDependencies: 0,
-  monitorRunDependencies: function(e) {}
-};
-
+const modulePromise = new Promise((resolve, reject) => {
+  window.Module = {
+    preRun: [],
+    postRun: [ resolve ],
+    print: function() {
+      return function(e) {
+        1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.log(e)
+      }
+    }(),
+    printErr: function(e) {
+      1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.error(e)
+    },
+    canvas: function() {}(),
+    setStatus: function() {},
+    totalDependencies: 0,
+    monitorRunDependencies: function(e) {}
+  };
+});
