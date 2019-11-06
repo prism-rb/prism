@@ -13,37 +13,17 @@ Prism is a framework that helps you make frontend web applications with Ruby and
 
 ### Getting started
 
-Prism requires that you have both [mruby](https://github.com/mruby/mruby) and [emscripten](https://emscripten.org/) `v1.38.46` installed and available on your path.
-
-You can install mruby through your preferred package manager, such as homebrew, apt-get or nix.
-
-Package managers often have outdated versions of emscripten, so it's recommended that you install via `emsdk`.
-
-Essentially you will need to do something like this:
-
-```bash
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk
-./emsdk install 1.38.46
-./emsdk activate 1.38.46
-source ./emsdk_env.sh
-```
-
-In future when you want to build a Prism project, you'll need to ensure you've sourced `emsdk_env.sh` first, either in your shell profile or manually before running `prism build`.
-
-Further instructions are available on the [emscripten website](https://emscripten.org/docs/getting_started/downloads.html).
-
 You can install Prism from RubyGems using `gem install prism-cli`.
 
 ### CLI Usage
 
 You can initialize a new Prism app by running `prism init`. This simply creates a hello world sample application, by default at `./app.rb` but you can customize the location by providing an argument to `prism init`.
 
-You can then run `prism build` to compile your application. You can provide an entrypoint, but `./app.rb` is assumed by default.
+You can then run `prism server`, which will start a development server. If you then navigate to `localhost:3042/app.rb`, you should see the sample application. Try changing the code and reloading the page, and the app will update.
 
-`prism build` creates a sample html file, a bundle for Prism's runtime JS code, the emscripten runtime code and the ruby compiled to Wasm.
+If an error occurs, it will be printed out to the browser console.
 
-To test your application, you can run `prism server` and open `localhost:3042` in your browser. You should see a hello world application with an input and some text. You should be able to change the input and see the text change.
+Building production releases of Prism apps through the command line is still a work in progress.
 
 ### Writing a Prism App
 
@@ -51,7 +31,7 @@ Prism apps are written in mruby. mruby is a lightweight implementation of Ruby t
 
 mruby is similar in many ways to cruby and will be a familiar experience for someone who has only used the mainline interpreter. The most notable exception is that mruby only supports syntax up to ruby 1.9, which means there are no keyword arguments or safe traversal operator.
 
-There are a number of other small differences, and it's worth reviewing the [mruby limitations documentation](https://github.com/mruby/mruby/blob/master/doc/limitations.md).
+There are a number of other small differences, and it's worth reviewing the [mruby limitations documentation](https://github.com/mruby/mruby/blob/master/doc/limitations.md). You might also want to refer to the [mruby API docs](http://mruby.org/docs/api/).
 
 If you run `prism init`, it will create a sample application that makes a good starting point. This is the code it outputs:
 
