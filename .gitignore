@@ -6,4 +6,6 @@ slides/build/*.wast
 slides/build/*.map
 examples/build/
 
+*.gem
+
 node_modules/
