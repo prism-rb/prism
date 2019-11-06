@@ -1,7 +1,8 @@
-PHONY: bundle.js
-
-dist/prism.js:
+dist/prism.js: src/prism.js
 	npx browserify src/prism.js -o dist/prism.js
+
+runtime:
+	./script/build-prism-runtime
 
 mruby-build:
 	cd mruby && make
@@ -11,7 +12,3 @@ patch-mruby:
 
 unpatch-mruby:
 	cd mruby && git checkout . && git clean -f && cd ..
-
-server:
-	node wasm-server.js
-

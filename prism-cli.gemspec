@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   ]
 
   s.files += Dir.glob("src/*.rb")
-  s.files += Dir.glob("dist/*")
+  s.files += Dir.glob("build/*")
   s.files += Dir.glob("mruby/include/**/*");
   s.homepage    = 'https://github.com/prism/prism-rb'
   s.license     = 'MIT'

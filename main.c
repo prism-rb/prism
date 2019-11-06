@@ -9,10 +9,10 @@
 #include <mruby/string.h>
 #include <mruby/variable.h>
 #include <mruby/throw.h>
-#include "bundle.c"
 
 mrb_value app;
 mrb_state *mrb;
+mrbc_context *c;
 
 
 mrb_value
@@ -80,6 +80,7 @@ main(int argc, const char * argv[])
   struct RClass *dom_class, *http_class;
 
   mrb = mrb_open();
+  c = mrbc_context_new(mrb);
 
   if (!mrb) { /* handle error */ }
   dom_class = mrb_define_class(mrb, "InternalDOM", mrb->object_class);
@@ -100,10 +101,37 @@ main(int argc, const char * argv[])
     MRB_ARGS_REQ(1)
   );
 
-  app = mrb_load_irep(mrb, bundle);
-  mrb_gc_register(mrb, app);
+  return 0;
+}
 
-  return 1;
+mrb_value load_file(char* name) {
+  mrb_value v;
+  FILE *fp = fopen(name, "r");
+  if (fp == NULL) {
+    printf("Cannot open main file: %s\n", name);
+    return mrb_nil_value();
+  }
+  mrbc_filename(mrb, c, name);
+  v = mrb_load_file_cxt(mrb, fp, c);
+  fclose(fp);
+  return v;
+}
+
+void load(char* main) {
+  /*int i;
+  for (i = 0; i < argc; i++) {
+    FILE *lfp = fopen(argv[i], "rb");
+    if (lfp == NULL) {
+      printf("Cannot open library file: %s\n", argv[i]);
+      mrbc_context_free(mrb, c);
+      return;
+    }
+    mrb_load_file_cxt(mrb, lfp, c);
+    fclose(lfp);
+  }*/
+  load_file("prism.rb");
+  app = load_file(main);
+  mrb_gc_register(mrb, app);
 }
 
 char* render() {

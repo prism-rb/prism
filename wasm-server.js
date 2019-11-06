@@ -10,6 +10,7 @@ const proxy = http.createServer((req, res) => {
     p = path.join('.', 'index.html');
   }
 
+  console.log(p);
   try {
     if (p.endsWith('.wasm')) {
       res.setHeader("Content-Type", "application/wasm")

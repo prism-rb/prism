@@ -1,10 +1,8 @@
+
 class HTTPExample < Prism::Component
   TARGET = "http://localhost:9001/"
 
-  attr_accessor :name
-
-  def initialize(name = "World")
-    @name = name
+  def initialize
     @status = nil
   end
 

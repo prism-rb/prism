@@ -106,9 +106,32 @@ function render() {
 
 window.render = render;
 
+function fetchAndLoad(name) {
+  return fetch(name).then(r => r.text().then(t => ({ok: r.ok, text: t}))).then(({ok, text}) => {
+    if (!ok) {
+      throw new Error(`Prism: Could not load ${name}`, text);
+    }
+
+    return {name, text};
+  });
+}
+
+const modulesToLoad = [fetchAndLoad("prism.rb"), fetchAndLoad("http.rb")];
+
+function load() {
+  Promise.all(modulesToLoad).then((modules) => {
+    for (let m of modules) {
+      FS.writeFile(`./${m.name}`, m.text);
+    }
+
+    Module.ccall("load", "void", ["string"], ["http.rb"]);
+    render();
+  });
+}
+
 window.Module = {
   preRun: [],
-  postRun: [ render ],
+  postRun: [ load ],
   print: function() {
     return function(e) {
       1 < arguments.length && (e = Array.prototype.slice.call(arguments).join(" ")), console.log(e)
