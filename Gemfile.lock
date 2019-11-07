@@ -1,3 +1,8 @@
+PATH
+  remote: .
+  specs:
+    prism-cli (0.0.9)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -7,7 +12,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  prism-cli!
   wasm
 
 BUNDLED WITH
-   2.0.1
+   2.0.2
