@@ -1,3 +1,5 @@
+/Gemfile.lock
+
 .DS_Store
 
 slides/build/*.wasm
