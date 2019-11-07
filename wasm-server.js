@@ -15,6 +15,7 @@ function isDirectory(p) {
 }
 
 const port = parseInt(process.argv[2], 10) || 3042;
+const host = process.argv[3] || '127.0.0.1';
 const proxy = http.createServer((req, res) => {
   let p = path.join('.', req.url);
 
@@ -100,5 +101,5 @@ const proxy = http.createServer((req, res) => {
   res.end();
 });
 
-console.log(`Listening on localhost:${port}`);
-proxy.listen(port, '127.0.0.1');
+console.log(`Listening on ${host}:${port}`);
+proxy.listen(port, host);

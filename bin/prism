@@ -43,8 +43,8 @@ def init(path = "app.rb")
   puts "Created new Prism app at app.rb\n\nRun prism server to see your app."
 end
 
-def server(port = 3042)
-  IO.popen("node #{__dir__}/../wasm-server.js #{port}") do |f|
+def server(port = 3042, host = '127.0.0.1')
+  IO.popen("node #{__dir__}/../wasm-server.js #{port} #{host}") do |f|
     until f.eof?
       puts f.gets
     end
@@ -56,8 +56,14 @@ def help
 Usage: prism <command> [options]
 
 Commands:
-  init [<path>]              initializes a new prism application at the given path, or ./app.rb if not provided
-  server [<port>]            runs a dev server on the given port, or 3042 if not provided
+  init [<path>]
+    initializes a new prism application at the given path
+    default: ./app.rb
+
+  server [<port> <host>]
+    runs a dev server on the given host and port
+    default: 3000 127.0.0.1
+
   HEREDOC
 end
 
@@ -70,11 +76,7 @@ when "build"
   rest = ["app.rb"] if rest.empty?
   build(rest)
 when "server"
-  if rest.empty?
-    server
-  else
-    server(rest.first.to_i)
-  end
+  server(*rest)
 else
   help
 end

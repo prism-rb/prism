@@ -9,3 +9,5 @@ examples/build/
 *.gem
 
 node_modules/
+
+/tmp
