@@ -62,7 +62,7 @@ Let's break this down piece by piece.
 class HelloWorld < Prism::Component
 ```
 
-Much like Rails, Prism provides most of it's functionality through base classes that you should inherit from.
+Much like Rails, Prism provides most of its functionality through base classes that you should inherit from.
 
 The key concept in Prism is a Component, which should be familiar to anyone who has worked with JS frameworks like React, Vue or similar.
 
