@@ -132,6 +132,9 @@ void load(char* main) {
   }*/
   load_file("prism-ruby/prism.rb");
   app = load_file(main);
+  if(!mrb_obj_is_kind_of(mrb, app, mrb_class_get(mrb, "Prism::Mountpoint"))) {
+    mrb_raise(mrb, mrb->eRuntimeError_class, "Could not find Prism::Mountpoint")  
+  }
   mrb_gc_register(mrb, app);
 }
 
