@@ -230,7 +230,7 @@ As mentioned above, Prism is still in extremely early development. The following
  - linting for incompatibilities with cruby
  - elm-reactor style dev server
 
-If you're interested in helping implement any of those features, or you want to contribute in any way, please make an issue or a pull request or just [get in touch with me](mailto:ncwjohnston@gmail.com).
+If you're interested in helping implement any of those features, or you want to contribute in any way, please make an issue or a pull request or just [get in touch with me](mailto:ncwjohnstone@gmail.com).
 
 Prism is currently developed by a single person (who also has a lot of other ambitious projects). I would love to have some other people to help share the load. There's lots of low hanging fruit still to be plucked.
 
