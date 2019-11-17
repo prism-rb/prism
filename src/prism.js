@@ -146,8 +146,10 @@ function load(modulesToLoad, main) {
         FS.writeFile(`./${m.name}`, m.text);
       }
 
-      Module.ccall("load", "void", ["string"], [main]);
-      render();
+      const result = Module.ccall("load", "number", ["string"], [main]);
+      if (result === 0) {
+        render();
+      }
     });
   });
 }
