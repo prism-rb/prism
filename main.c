@@ -1,5 +1,6 @@
-#include <emscripten.h>
+#include <stdlib.h>
 #include <stdarg.h>
+#include <emscripten.h>
 #include <mruby.h>
 #include <mruby/irep.h>
 #include <mruby/array.h>
@@ -108,7 +109,7 @@ mrb_value load_file(char* name) {
   mrb_value v;
   FILE *fp = fopen(name, "r");
   if (fp == NULL) {
-    printf("Cannot open file: %s\n", name);
+    fprintf(stderr, "Cannot open file: %s\n", name);
     return mrb_nil_value();
   }
   printf("[Prism] Loading: %s\n", name);
@@ -118,7 +119,8 @@ mrb_value load_file(char* name) {
   return v;
 }
 
-void load(char* main) {
+int load(char* main) {
+  const char* class_name;
   /*int i;
   for (i = 0; i < argc; i++) {
     FILE *lfp = fopen(argv[i], "rb");
@@ -132,10 +134,19 @@ void load(char* main) {
   }*/
   load_file("prism-ruby/prism.rb");
   app = load_file(main);
-  if(!mrb_obj_is_kind_of(mrb, app, mrb_class_get(mrb, "Prism::Mountpoint"))) {
-    mrb_raise(mrb, E_TYPE_ERROR, "Could not find Prism::Mountpoint");
+  struct RClass* prism_module = mrb_module_get(mrb, "Prism");
+  struct RClass* mount_class = mrb_class_get_under(mrb, prism_module, "Mount");
+
+  if(!mrb_obj_is_kind_of(mrb, app, mount_class)) {
+    class_name = mrb_obj_classname(mrb, app);
+
+    fprintf(stderr, "[Prism] Error starting app.\n  Expected '%s' to return an instance of Prism::Mount but got a %s instead.\n  Did you remember to call Prism.mount on the last line?\n", main, class_name);
+
+    return 1;
   }
   mrb_gc_register(mrb, app);
+
+  return 0;
 }
 
 char* render() {
@@ -180,22 +191,3 @@ void http_response(char* text, char* id) {
   }
 }
 
-// main
-//
-// make the ruby component
-// return a reference?
-//
-// dispatch
-//
-// call the ruby component with an event triggered by event handler
-// we might need the reference?
-//
-// what is the mruby api for calling methods?
-
-/**
- * Gets a class.
- * @param mrb The current mruby state.
- * @param name The name of the class.
- * @return [struct RClass *] A reference to the class.
-*/
-// MRB_API struct RClass * mrb_class_get(mrb_state *mrb, const char *name);
