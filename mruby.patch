@@ -23,7 +23,7 @@ new file mode 100644
 index 00000000..b19baa75
 --- /dev/null
 +++ b/mrbgems/wasm.gembox
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,92 @@
 +MRuby::GemBox.new do |conf|
 +  # Meta-programming features
 +  conf.gem :core => "mruby-metaprog"
@@ -114,4 +114,5 @@ index 00000000..b19baa75
 +
 +  # Add third party json support
 +  conf.gem :github => "mattn/mruby-json", :checksum_hash => "054699892b0d681110e7348440cddb70a3fd671e"
++  conf.gem :github => "mattn/mruby-require"
 +end
