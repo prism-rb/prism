@@ -191,14 +191,12 @@ module Prism
         end
 
         result[:on] ||= {}
-        result[:on][:click] = options[:onClick].to_hash if options[:onClick]
-        result[:on][:change] = options[:onChange].to_hash if options[:onChange]
-        result[:on][:input] = options[:onInput].to_hash if options[:onInput]
-        result[:on][:mousedown] = options[:onMousedown].to_hash if options[:onMousedown]
-        result[:on][:mouseup] = options[:onMouseup].to_hash if options[:onMouseup]
-        result[:on][:keydown] = options[:onKeydown].to_hash if options[:onKeydown]
-        result[:on][:keyup] = options[:onKeyup].to_hash if options[:onKeyup]
-        result[:on][:scroll] = options[:onScroll].to_hash if options[:onScroll]
+
+        events_options = options.select { |key, value| key.to_s.start_with?('on') }
+        events_options.each do |key, value|
+          event_name = key.to_s.sub(/on/, '').downcase.to_sym
+          result[:on][event_name] = value.to_hash
+        end
 
         if options[:on]
           event_handlers = {}
