@@ -192,9 +192,10 @@ module Prism
 
         result[:on] ||= {}
 
-        events_options = options.select { |key, value| key.to_s.start_with?('on') }
-        events_options.each do |key, value|
-          event_name = key.to_s.sub(/on/, '').downcase.to_sym
+        options.each do |key, value|
+          key_as_string = key.to_s
+          next unless key_as_string.start_with?('on')
+          event_name = key_as_string.sub(/on/, '').downcase
           result[:on][event_name] = value.to_hash
         end
 
