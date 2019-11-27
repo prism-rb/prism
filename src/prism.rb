@@ -1,6 +1,6 @@
-require 'prism/component'
-require 'prism/mount'
-require 'prism/event_handler'
+require 'src/prism/component.rb'
+require 'src/prism/mount.rb'
+require 'src/prism/event_handler.rb'
 
 module Prism
   @@instances = {}

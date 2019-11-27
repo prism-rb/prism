@@ -13,8 +13,25 @@
 
 mrb_value app;
 mrb_state *mrb;
-mrbc_context *c;
 
+mrb_value load_file(char* name) {
+  mrb_value v;
+  mrbc_context *c;
+  c = mrbc_context_new(mrb);
+
+  int ai = mrb_gc_arena_save(mrb);
+  FILE *fp = fopen(name, "r");
+  if (fp == NULL) {
+    fprintf(stderr, "Cannot open file: %s\n", name);
+    return mrb_nil_value();
+  }
+  printf("[Prism] Loading: %s\n", name);
+  mrbc_filename(mrb, c, name);
+  v = mrb_load_file_cxt(mrb, fp, c);
+  fclose(fp);
+  mrb_gc_arena_restore(mrb, ai);
+  return v;
+}
 
 mrb_value
 add_event_listener(mrb_state *mrb, mrb_value self){
@@ -75,14 +92,25 @@ http_request(mrb_state *mrb, mrb_value self){
   return mrb_nil_value();
 }
 
+mrb_value require(mrb_state *mrb, mrb_value self){
+  mrb_value path;
+  mrb_get_args(mrb, "S", &path);
+
+  load_file(RSTRING_PTR(path));
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return mrb_nil_value();
+}
+
 int
 main(int argc, const char * argv[])
 {
   struct RClass *dom_class, *http_class;
 
   mrb = mrb_open();
-  c = mrbc_context_new(mrb);
-
   if (!mrb) { /* handle error */ }
   dom_class = mrb_define_class(mrb, "InternalDOM", mrb->object_class);
   mrb_define_class_method(
@@ -102,48 +130,30 @@ main(int argc, const char * argv[])
     MRB_ARGS_REQ(1)
   );
 
-  return 0;
-}
+  http_class = mrb_define_class(mrb, "InternalHTTP", mrb->object_class);
+  mrb_define_class_method(
+    mrb,
+    http_class,
+    "http_request",
+    http_request,
+    MRB_ARGS_REQ(1)
+  );
 
-mrb_value load_file(char* name) {
-  mrb_value v;
-  FILE *fp = fopen(name, "r");
-  if (fp == NULL) {
-    fprintf(stderr, "Cannot open file: %s\n", name);
-    return mrb_nil_value();
-  }
-  printf("[Prism] Loading: %s\n", name);
-  mrbc_filename(mrb, c, name);
-  v = mrb_load_file_cxt(mrb, fp, c);
-  fclose(fp);
-  return v;
+  mrb_define_module_function(
+    mrb,
+    mrb_module_get(mrb, "Kernel"),
+    "require",
+    require,
+    MRB_ARGS_REQ(1)
+  );
+
+  return 0;
 }
 
 int load(char* main) {
   const char* class_name;
-  /*int i;
-  for (i = 0; i < argc; i++) {
-    FILE *lfp = fopen(argv[i], "rb");
-    if (lfp == NULL) {
-      printf("Cannot open library file: %s\n", argv[i]);
-      mrbc_context_free(mrb, c);
-      return;
-    }
-    mrb_load_file_cxt(mrb, lfp, c);
-    fclose(lfp);
-  }*/
-  load_file("prism-ruby/prism.rb");
+  load_file("src/prism.rb");
   app = load_file(main);
-  struct RClass* prism_module = mrb_module_get(mrb, "Prism");
-  struct RClass* mount_class = mrb_class_get_under(mrb, prism_module, "Mount");
-
-  if(!mrb_obj_is_kind_of(mrb, app, mount_class)) {
-    class_name = mrb_obj_classname(mrb, app);
-
-    fprintf(stderr, "[Prism] Error starting app.\n  Expected '%s' to return an instance of Prism::Mount but got a %s instead.\n  Did you remember to call Prism.mount on the last line?\n", main, class_name);
-
-    return 1;
-  }
   mrb_gc_register(mrb, app);
 
   return 0;

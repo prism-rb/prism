@@ -16,9 +16,11 @@ For more information check out the docs on the github repo.
   s.files       = [
     "wasm-server.js"
   ]
-
   s.files += Dir.glob("src/*.rb")
   s.files += Dir.glob("build/*")
   s.homepage    = 'https://github.com/prism/prism-rb'
   s.license     = 'MIT'
+
+  s.add_runtime_dependency 'rack', '~> 1.6'
+  s.add_runtime_dependency 'thin', '~> 1.7'
 end

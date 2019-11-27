@@ -30,4 +30,4 @@ class Counter < Prism::Component
   end
 end
 
-Prism.mount(Counter.new(0) {})
+Prism.mount(Counter.new(0))

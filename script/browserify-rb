@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require_relative '../src/require-bundler'
+
+if __FILE__ == $0
+  puts Bundle.from_main(ARGV.first).to_json
+end

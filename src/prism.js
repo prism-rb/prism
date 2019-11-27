@@ -100,9 +100,9 @@ var modulesToLoad = [];
 
 function run(element, main) {
   currentContainer = document.getElementById('root');
-  modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
+  modulesToLoad = fetchAndLoad(main);
 
-  load(modulesToLoad, main);
+  load(modulesToLoad);
 }
 
 window.Prism = {run};
@@ -119,34 +119,39 @@ function render() {
 window.render = render;
 
 function fetchAndLoad(name) {
-  return fetch(name).then(r => r.text().then(t => ({ok: r.ok, text: t}))).then(({ok, text}) => {
+  return fetch(name).then(r => r.json().then(t => ({ok: r.ok, json: t}))).then(({ok, json}) => {
     if (!ok) {
-      throw new Error(`Prism: Could not load ${name}`, text);
+      throw new Error(`Prism: Could not load ${name}`);
     }
 
-    return {name, text};
+    return json;
   });
 }
 
-function load(modulesToLoad, main) {
+function load(modulesToLoad) {
   modulePromise.then(() => {
-    Promise.all(modulesToLoad).then((modules) => {
-      for (let m of modules) {
-        const parts = m.name.split('/').filter(a => a.trim() !== '');
+    modulesToLoad.then((modules) => {
+      for (let f in modules.files) {
+        const parts = f.split('/').filter(a => a.trim() !== '');
 
         const directories = parts.slice(0, -1);
         const basename = parts.slice(-1)[0];
 
         const pwd = [];
         for (let d of directories) {
-          FS.mkdir('./' + pwd.concat(d).join('/'));
+          if (d === "." ) { continue; }
+          try {
+            FS.mkdir('./' + pwd.concat(d).join('/'));
+          } catch (e) {
+            // Could just already exist
+          }
           pwd.push(d);
         }
 
-        FS.writeFile(`./${m.name}`, m.text);
+        FS.writeFile(f, modules.files[f]);
       }
 
-      const result = Module.ccall("load", "number", ["string"], [main]);
+      const result = Module.ccall("load", "number", ["string"], [modules.main]);
       if (result === 0) {
         render();
       }
