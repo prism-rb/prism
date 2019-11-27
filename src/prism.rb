@@ -23,11 +23,7 @@ module Prism
 
       instance = Prism.instances[message["instance"]]
 
-      if instance.respond_to? message["type"]
-        instance.send(message["type"], *message["args"])
-      else
-        raise "Component #{instance.class} has no method ##{message["type"]}"
-      end
+      instance.process(message)
     end
 
     def event(eventJSON, id)
@@ -195,8 +191,8 @@ module Prism
         options.each do |key, value|
           key_as_string = key.to_s
           next unless key_as_string.start_with?('on')
-          event_name = key_as_string.sub(/on/, '').downcase
-          result[:on][event_name] = value.to_hash
+          event_name = key_as_string.sub('on', '').downcase
+          result[:on][event_name] = _register_handler(value)
         end
 
         if options[:on]
@@ -218,18 +214,20 @@ module Prism
     end
 
     def call(method_name, *args)
-      Prism.instances[object_id] = self # TODO - this is a memory leak
-      EventHandler.new(object_id, method_name).with(*args)
+      EventHandler.new(self, method_name).with(*args)
     end
 
     def stop_propagation
-      Prism.instances[object_id] = self # TODO - this is a memory leak
-      EventHandler.new(object_id, nil).stop_propagation
+      EventHandler.new(self, method_name).stop_propagation
     end
 
     def prevent_default
-      Prism.instances[object_id] = self # TODO - this is a memory leak
-      EventHandler.new(object_id, nil).prevent_default
+      EventHandler.new(self, method_name).prevent_default
+    end
+
+    def _register_handler(handler)
+      Prism.instances[handler.id] = handler # TODO - this is a memory leak
+      handler.to_hash
     end
 
     def render
@@ -238,10 +236,11 @@ module Prism
   end
 
   class EventHandler
-    attr_reader :method_name
+    attr_reader :method_name, :id
 
-    def initialize(id, method_name, args = [], options = {})
-      @id = id
+    def initialize(instance, method_name, args = [], options = {})
+      @instance = instance
+      @id = self.object_id
       @method_name = method_name
       @args = args
       @options = {prevent_default: false, stop_propagation: false}.merge(options)
@@ -250,30 +249,50 @@ module Prism
     def with(*additionalArgs)
       new_args = additionalArgs.map { |a| {type: :constant, value: a} }
 
-      EventHandler.new(@id, method_name, @args + new_args, @options)
+      EventHandler.new(@instance, method_name, @args + new_args, @options)
     end
 
     def with_event
-      EventHandler.new(@id, method_name, @args + [{type: :event}], @options)
+      EventHandler.new(@instance, method_name, @args + [{type: :event}], @options)
     end
 
     def with_event_data(*property_names)
       new_args = property_names.map { |item| {type: :event_data, key: item } }
 
-      EventHandler.new(@id, method_name, @args + new_args, @options)
+      EventHandler.new(@instance, method_name, @args + new_args, @options)
     end
 
     def with_target_data(*items)
       target_args = items.map { |item| {type: :target_data, key: item } }
-      EventHandler.new(@id, method_name, @args + target_args, @options)
+      EventHandler.new(@instance, method_name, @args + target_args, @options)
     end
 
     def prevent_default
-      EventHandler.new(@id, method_name, @args, @options.merge(prevent_default: true))
+      EventHandler.new(@instance, method_name, @args, @options.merge(prevent_default: true))
     end
 
     def stop_propagation
-      EventHandler.new(@id, method_name, @args, @options.merge(stop_propagation: true))
+      EventHandler.new(@instance, method_name, @args, @options.merge(stop_propagation: true))
+    end
+
+    def process(message)
+      call_args = []
+      message_args = message["args"]
+
+      @args.each do |arg|
+        case arg[:type]
+        when :constant
+          call_args << arg[:value]
+        else
+          call_args << message_args.shift
+        end
+      end
+
+      if @instance.respond_to? message["type"]
+        @instance.send(message["type"], *call_args)
+      else
+        raise "Component #{@instance.class} has no method ##{message["type"]}"
+      end
     end
 
     def to_hash

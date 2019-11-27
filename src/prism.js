@@ -55,10 +55,6 @@ function rubyVTreeToSnabbdom(rvtree) {
         let args = [];
 
         for (let arg of handler.args) {
-          if (arg.type === "constant") {
-            args.push(arg.value);
-          }
-
           if (arg.type === "event") {
             args.push(serializeEvent(event));
           }
