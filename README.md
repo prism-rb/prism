@@ -1,7 +1,7 @@
 
 ## Prism
 
-[![Join the chat at https://gitter.im/prism-rb/community](https://badges.gitter.im/prism-rb/community.svg)](https://gitter.im/prism-rb/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Financial Contributors on Open Collective](https://opencollective.com/prism/all/badge.svg?label=financial+contributors)](https://opencollective.com/prism) [![Join the chat at https://gitter.im/prism-rb/community](https://badges.gitter.im/prism-rb/community.svg)](https://gitter.im/prism-rb/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Build frontend web apps with Ruby and WebAssembly 
 
@@ -245,6 +245,36 @@ If you think this is a worthwhile project, please support us on Open Collective.
 My main goal around starting Prism with funding is that I want as much of the work that's done on Prism as possible to be reimbursed, no matter who's doing it. The other aspect is that I don't have very much spare time for projects but if I can get paid for my work I can do Prism as part of my day to day contract work.
 
 **[Support Prism on Open Collective](https://opencollective.com/prism)**
+
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/prism-rb/prism/graphs/contributors"><img src="https://opencollective.com/prism/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/prism/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/prism"><img src="https://opencollective.com/prism/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/prism/contribute)]
+
+<a href="https://opencollective.com/prism/organization/0/website"><img src="https://opencollective.com/prism/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/1/website"><img src="https://opencollective.com/prism/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/2/website"><img src="https://opencollective.com/prism/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/3/website"><img src="https://opencollective.com/prism/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/4/website"><img src="https://opencollective.com/prism/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/5/website"><img src="https://opencollective.com/prism/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/6/website"><img src="https://opencollective.com/prism/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/7/website"><img src="https://opencollective.com/prism/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/8/website"><img src="https://opencollective.com/prism/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/prism/organization/9/website"><img src="https://opencollective.com/prism/organization/9/avatar.svg"></a>
 
 ### License
 
