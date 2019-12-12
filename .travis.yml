@@ -1,4 +1,5 @@
 before_script:
+- gem install bundler
 - git submodule update --init --recursive
 - ./emsdk/emsdk install 1.38.46
 - ./emsdk/emsdk activate 1.38.46
