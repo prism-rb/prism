@@ -1,5 +1,4 @@
-before_install:
-- gem install bundler
+language: generic
 before_script:
 - git submodule update --init --recursive
 - ./emsdk/emsdk install 1.38.46
