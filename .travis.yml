@@ -1,0 +1,11 @@
+language: generic
+before_script:
+- git submodule update --init --recursive
+- ./emsdk/emsdk install 1.38.46
+- ./emsdk/emsdk activate 1.38.46
+- source ./emsdk/emsdk_env.sh
+- make patch-mruby && make mruby-build
+- export PATH=mruby/build/host/bin:$PATH 
+
+script:
+- make runtime
