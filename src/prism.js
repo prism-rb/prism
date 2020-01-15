@@ -94,11 +94,11 @@ var currentContainer;
 var allLoaded = false;
 var modulesToLoad = [];
 
-function run(element, main) {
-  currentContainer = document.getElementById('root');
+function run(element, main, config = {}) {
+  currentContainer = element;
   modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
 
-  load(modulesToLoad, main);
+  load(modulesToLoad, main, config);
 }
 
 window.Prism = {run};
@@ -124,7 +124,7 @@ function fetchAndLoad(name) {
   });
 }
 
-function load(modulesToLoad, main) {
+function load(modulesToLoad, main, config = {}) {
   modulePromise.then(() => {
     Promise.all(modulesToLoad).then((modules) => {
       for (let m of modules) {
@@ -142,7 +142,7 @@ function load(modulesToLoad, main) {
         FS.writeFile(`./${m.name}`, m.text);
       }
 
-      const result = Module.ccall("load", "number", ["string"], [main]);
+      const result = Module.ccall("load", "number", ["string", "string"], [main, JSON.stringify(config)]);
       if (result === 0) {
         render();
       }

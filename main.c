@@ -116,10 +116,14 @@ mrb_value load_file(char* name) {
   mrbc_filename(mrb, c, name);
   v = mrb_load_file_cxt(mrb, fp, c);
   fclose(fp);
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
   return v;
 }
 
-int load(char* main) {
+int load(char* main, char* config) {
   const char* class_name;
   /*int i;
   for (i = 0; i < argc; i++) {
@@ -132,6 +136,7 @@ int load(char* main) {
     mrb_load_file_cxt(mrb, lfp, c);
     fclose(lfp);
   }*/
+  mrb_define_global_const(mrb, "JSON_CONFIG", mrb_str_new_cstr(mrb, config));
   load_file("prism-ruby/prism.rb");
   app = load_file(main);
   struct RClass* prism_module = mrb_module_get(mrb, "Prism");

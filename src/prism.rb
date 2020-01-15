@@ -376,3 +376,5 @@ module HTTP
     end
   end
 end
+
+CONFIG = JSON::parse(JSON_CONFIG)
