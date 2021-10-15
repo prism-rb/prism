@@ -5,7 +5,7 @@ runtime:
 	./script/build-prism-runtime
 
 mruby-build:
-	cd mruby && make
+	cd mruby && MRUBY_CONFIG=emscripten make
 
 patch-mruby:
 	cd mruby && cat ../mruby.patch | git apply --reject --whitespace=fix

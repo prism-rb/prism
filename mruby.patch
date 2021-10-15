@@ -1,11 +1,10 @@
-diff --git a/build_config.rb b/build_config.rb
-index 751317c7..d9dab935 100644
---- a/build_config.rb
-+++ b/build_config.rb
-@@ -125,6 +125,15 @@ MRuby::Build.new('test') do |conf|
-   conf.gembox 'default'
- end
- 
+diff --git a/build_config/emscripten.rb b/build_config/emscripten.rb
+new file mode 100644
+index 000000000..e016f7887
+--- /dev/null
++++ b/build_config/emscripten.rb
+@@ -0,0 +1,9 @@
++
 +MRuby::CrossBuild.new('emscripten') do |conf|
 +  toolchain :clang
 +  conf.gembox 'wasm'
@@ -14,103 +13,18 @@ index 751317c7..d9dab935 100644
 +  conf.linker.command = 'emcc'
 +  conf.archiver.command = 'emar'
 +end
-+
- #MRuby::Build.new('bench') do |conf|
- #  # Gets set by the VS command prompts.
- #  if ENV['VisualStudioVersion'] || ENV['VSINSTALLDIR']
 diff --git a/mrbgems/wasm.gembox b/mrbgems/wasm.gembox
 new file mode 100644
-index 00000000..b19baa75
+index 000000000..f4eb831e1
 --- /dev/null
 +++ b/mrbgems/wasm.gembox
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,10 @@
 +MRuby::GemBox.new do |conf|
-+  # Meta-programming features
-+  conf.gem :core => "mruby-metaprog"
-+
-+  # Use standard Array#pack, String#unpack methods
-+  conf.gem :core => "mruby-pack"
-+
-+  # Use standard Kernel#sprintf method
-+  conf.gem :core => "mruby-sprintf"
-+
-+  # Use standard print/puts/p
-+  conf.gem :core => "mruby-print"
-+
-+  # Use standard Math module
-+  conf.gem :core => "mruby-math"
-+
-+  # Use standard Time class
-+  conf.gem :core => "mruby-time"
-+
-+  # Use standard Struct class
-+  conf.gem :core => "mruby-struct"
-+
-+  # Use Comparable module extension
-+  conf.gem :core => "mruby-compar-ext"
-+
-+  # Use Enumerable module extension
-+  conf.gem :core => "mruby-enum-ext"
-+
-+  # Use String class extension
-+  conf.gem :core => "mruby-string-ext"
-+
-+  # Use Numeric class extension
-+  conf.gem :core => "mruby-numeric-ext"
-+
-+  # Use Array class extension
-+  conf.gem :core => "mruby-array-ext"
-+
-+  # Use Hash class extension
-+  conf.gem :core => "mruby-hash-ext"
-+
-+  # Use Range class extension
-+  conf.gem :core => "mruby-range-ext"
-+
-+  # Use Proc class extension
-+  conf.gem :core => "mruby-proc-ext"
-+
-+  # Use Symbol class extension
-+  conf.gem :core => "mruby-symbol-ext"
-+
-+  # Use Random class
-+  conf.gem :core => "mruby-random"
-+
-+  # Use Object class extension
-+  conf.gem :core => "mruby-object-ext"
-+
-+  # Use ObjectSpace class
-+  conf.gem :core => "mruby-objectspace"
-+
-+  # Use Fiber class
-+  conf.gem :core => "mruby-fiber"
-+
-+  # Use Enumerator class (require mruby-fiber)
-+  conf.gem :core => "mruby-enumerator"
-+
-+  # Use Enumerator::Lazy class (require mruby-enumerator)
-+  conf.gem :core => "mruby-enum-lazy"
-+
-+  # Use toplevel object (main) methods extension
-+  conf.gem :core => "mruby-toplevel-ext"
-+
-+  # Generate mirb command
-+  conf.gem :core => "mruby-bin-mirb"
-+
-+  # Generate mruby command
-+  conf.gem :core => "mruby-bin-mruby"
-+
-+  # Generate mruby-strip command
-+  conf.gem :core => "mruby-bin-strip"
-+
-+  # Use Kernel module extension
-+  conf.gem :core => "mruby-kernel-ext"
-+
-+  # Use class/module extension
-+  conf.gem :core => "mruby-class-ext"
-+
-+  # Use mruby-compiler to build other mrbgems
-+  conf.gem :core => "mruby-compiler"
++  conf.gembox "stdlib"
++  conf.gembox "stdlib-io"
++  conf.gembox "stdlib-ext"
++  conf.gembox "metaprog"
++  conf.gembox "math"
 +
 +  # Add third party json support
 +  conf.gem :github => "mattn/mruby-json", :checksum_hash => "054699892b0d681110e7348440cddb70a3fd671e"

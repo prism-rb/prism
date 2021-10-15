@@ -84,7 +84,7 @@ const proxy = http.createServer((req, res) => {
   <script type="text/javascript" src="/prism-assets/prism.js"></script>
   <script type="text/javascript" async src="/prism-assets/bundle.js"></script>
   <script type="text/javascript">
-    Prism.run("#root", "/${p}");
+    Prism.run(document.getElementById("root"), "/${p}");
   </script>
 </html>
       `);

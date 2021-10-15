@@ -62,7 +62,7 @@ Commands:
 
   server [<port> <host>]
     runs a dev server on the given host and port
-    default: 3000 127.0.0.1
+    default: 3042 127.0.0.1
 
   HEREDOC
 end

@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
 
-mrbc_path = `which mrbc`.split("\n").first
 emcc_path = `which emcc`.split("\n").first
 
-if (!mrbc_path || !emcc_path)
-  puts "Error: Please ensure you have mruby and emscripten installed and available on the $PATH.\n\n  mrbc: #{mrbc_path || 'Not found!'}\n  emcc: #{emcc_path || 'Not found! Do you need to source emsdk_env.sh?'}"
+if (!emcc_path)
+  puts "Error: Please ensure you have emscripten installed and available on the $PATH.\n\n  emcc: #{emcc_path || 'Not found! Do you need to source emsdk_env.sh?'}"
   exit 1
 end
 
@@ -25,6 +24,7 @@ puts "Compiling to Wasm..."
     -Oz \
     -I #{__dir__}/../mruby/include \
     main.c \
+    #{__dir__}/../mruby/build/emscripten/lib/libmruby_core.a \
     #{__dir__}/../mruby/build/emscripten/lib/libmruby.a \
     -o bundle.js
 `
