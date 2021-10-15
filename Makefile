@@ -1,10 +1,13 @@
-default: build/prism.js build/bundle.js
+default: build/prism.js build/bundle.js bindings/bindings.rb
 
 build/prism.js: src/prism.js
 	npx browserify src/prism.js -o build/prism.js
 
 build/bundle.js: main.c
 	./script/build-prism-runtime
+
+bindings/bindings.rb: ./script/generate-ruby-idl-bindings node_modules/@webref
+	./script/generate-ruby-idl-bindings
 
 mruby-build:
 	cd mruby && MRUBY_CONFIG=emscripten make

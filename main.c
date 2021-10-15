@@ -88,6 +88,16 @@ get_value_string(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+get_value_reference(mrb_state *mrb, mrb_value self) {
+  mrb_value reference, name;
+  mrb_get_args(mrb, "iS", &reference, &name);
+
+  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
+    return getValueReference($0, UTF8ToString($1));
+  }, reference, RSTRING_PTR(name)));
+}
+
+mrb_value
 add_event_listener(mrb_state *mrb, mrb_value self){
   mrb_value selector, event, id;
   mrb_get_args(mrb, "SSS", &selector, &event, &id);
@@ -184,7 +194,15 @@ main(int argc, const char * argv[])
     binding_class,
     "get_value_string",
     get_value_string,
-    MRB_ARGS_REQ(1)
+    MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_value_reference",
+    get_value_reference,
+    MRB_ARGS_REQ(2)
   );
 
   mrb_define_class_method(

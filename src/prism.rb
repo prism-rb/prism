@@ -393,7 +393,17 @@ module Prism::BindingHelpers
   module ClassMethods
     def bind_attr_reader(name, options)
       self.define_method(name) do |*args|
-        InternalBindings.get_value_string(@js_value, name.to_s);
+        begin
+          _class = JS.const_get(options[:return_type])
+        rescue NameError => e
+          _class = nil
+        end
+
+        if _class
+          _class.new(InternalBindings.get_value_reference(@js_value, name.to_s));
+        else
+          InternalBindings.get_value_string(@js_value, name.to_s);
+        end
       end
     end
 

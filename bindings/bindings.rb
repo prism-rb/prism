@@ -8018,6 +8018,284 @@ module JS
     bind_operation :IsSearchProviderInstalled, return_type: 'undefined', args: []
   end
 
+  class XMLHttpRequestEventTarget < EventTarget
+    include Prism::BindingHelpers
+
+    bind_attr_accessor :onloadstart, return_type: 'EventHandler'
+    bind_attr_accessor :onprogress, return_type: 'EventHandler'
+    bind_attr_accessor :onabort, return_type: 'EventHandler'
+    bind_attr_accessor :onerror, return_type: 'EventHandler'
+    bind_attr_accessor :onload, return_type: 'EventHandler'
+    bind_attr_accessor :ontimeout, return_type: 'EventHandler'
+    bind_attr_accessor :onloadend, return_type: 'EventHandler'
+  end
+
+  class XMLHttpRequestUpload < XMLHttpRequestEventTarget
+    include Prism::BindingHelpers
+
+
+  end
+
+  # Skipped definition, name=XMLHttpRequestResponseType, type='enum':
+  # {
+  #   "type": "enum",
+  #   "name": "XMLHttpRequestResponseType",
+  #   "values": [
+  #     {
+  #       "type": "enum-value",
+  #       "value": ""
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "arraybuffer"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "blob"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "document"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "json"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "text"
+  #     }
+  #   ],
+  #   "extAttrs": []
+  # }
+
+  class XMLHttpRequest < XMLHttpRequestEventTarget
+    include Prism::BindingHelpers
+
+    # def initialize()
+    # end
+
+    UNSENT = 0
+    OPENED = 1
+    HEADERS_RECEIVED = 2
+    LOADING = 3
+    DONE = 4
+
+    bind_attr_reader :readyState, return_type: 'unsigned short'
+    bind_attr_reader :upload, return_type: 'XMLHttpRequestUpload'
+    bind_attr_reader :responseURL, return_type: 'USVString'
+    bind_attr_reader :status, return_type: 'unsigned short'
+    bind_attr_reader :statusText, return_type: 'ByteString'
+    bind_attr_reader :response, return_type: 'any'
+    bind_attr_reader :responseText, return_type: 'USVString'
+    bind_attr_reader :responseXML, return_type: 'Document'
+
+    bind_attr_accessor :onreadystatechange, return_type: 'EventHandler'
+    bind_attr_accessor :timeout, return_type: 'unsigned long'
+    bind_attr_accessor :withCredentials, return_type: 'boolean'
+    bind_attr_accessor :responseType, return_type: 'XMLHttpRequestResponseType'
+
+    bind_operation :open, return_type: 'undefined', args: [
+      {"name":"method","type":"ByteString","optional":false},
+      {"name":"url","type":"USVString","optional":false}
+    ]
+    bind_operation :open, return_type: 'undefined', args: [
+      {"name":"method","type":"ByteString","optional":false},
+      {"name":"url","type":"USVString","optional":false},
+      {"name":"async","type":"boolean","optional":false},
+      {"name":"username","type":"USVString","optional":true},
+      {"name":"password","type":"USVString","optional":true}
+    ]
+    bind_operation :setRequestHeader, return_type: 'undefined', args: [
+      {"name":"name","type":"ByteString","optional":false},
+      {"name":"value","type":"ByteString","optional":false}
+    ]
+    bind_operation :send, return_type: 'undefined', args: [
+      {"name":"body","type":"Document | XMLHttpRequestBodyInit","optional":true}
+    ]
+    bind_operation :abort, return_type: 'undefined', args: []
+    bind_operation :getResponseHeader, return_type: 'ByteString', args: [
+      {"name":"name","type":"ByteString","optional":false}
+    ]
+    bind_operation :getAllResponseHeaders, return_type: 'ByteString', args: []
+    bind_operation :overrideMimeType, return_type: 'undefined', args: [
+      {"name":"mime","type":"DOMString","optional":false}
+    ]
+  end
+
+  # !!! Unknown definition type: typedef
+  # {
+  #   "type": "typedef",
+  #   "name": "FormDataEntryValue",
+  #   "idlType": {
+  #     "type": "typedef-type",
+  #     "extAttrs": [],
+  #     "generic": "",
+  #     "nullable": false,
+  #     "union": true,
+  #     "idlType": [
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "File"
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "USVString"
+  #       }
+  #     ]
+  #   },
+  #   "extAttrs": []
+  # }
+
+  class FormData < Prism::Binding
+    include Prism::BindingHelpers
+
+    # def initialize(form = UNDEFINED)
+    # end
+
+    bind_operation :append, return_type: 'undefined', args: [
+      {"name":"name","type":"USVString","optional":false},
+      {"name":"value","type":"USVString","optional":false}
+    ]
+    bind_operation :append, return_type: 'undefined', args: [
+      {"name":"name","type":"USVString","optional":false},
+      {"name":"blobValue","type":"Blob","optional":false},
+      {"name":"filename","type":"USVString","optional":true}
+    ]
+    bind_operation :delete, return_type: 'undefined', args: [
+      {"name":"name","type":"USVString","optional":false}
+    ]
+    bind_operation :get, return_type: 'FormDataEntryValue', args: [
+      {"name":"name","type":"USVString","optional":false}
+    ]
+    bind_operation :getAll, return_type: 'FormDataEntryValue', args: [
+      {"name":"name","type":"USVString","optional":false}
+    ]
+    bind_operation :has, return_type: 'boolean', args: [
+      {"name":"name","type":"USVString","optional":false}
+    ]
+    bind_operation :set, return_type: 'undefined', args: [
+      {"name":"name","type":"USVString","optional":false},
+      {"name":"value","type":"USVString","optional":false}
+    ]
+    bind_operation :set, return_type: 'undefined', args: [
+      {"name":"name","type":"USVString","optional":false},
+      {"name":"blobValue","type":"Blob","optional":false},
+      {"name":"filename","type":"USVString","optional":true}
+    ]
+
+    # !!! Unknown member type: iterable
+    # {
+    #   "type": "iterable",
+    #   "idlType": [
+    #     {
+    #       "type": null,
+    #       "extAttrs": [],
+    #       "generic": "",
+    #       "nullable": false,
+    #       "union": false,
+    #       "idlType": "USVString"
+    #     },
+    #     {
+    #       "type": null,
+    #       "extAttrs": [],
+    #       "generic": "",
+    #       "nullable": false,
+    #       "union": false,
+    #       "idlType": "FormDataEntryValue"
+    #     }
+    #   ],
+    #   "arguments": [],
+    #   "extAttrs": [],
+    #   "readonly": false,
+    #   "async": false
+    # }
+  end
+
+  class ProgressEvent < Event
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    bind_attr_reader :lengthComputable, return_type: 'boolean'
+    bind_attr_reader :loaded, return_type: 'unsigned long long'
+    bind_attr_reader :total, return_type: 'unsigned long long'
+  end
+
+  # Skipped definition, name=ProgressEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "ProgressEventInit",
+  #   "inheritance": "EventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "lengthComputable",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "loaded",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned long long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "total",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned long long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
   Document.include(NonElementParentNode)
 
   DocumentFragment.include(NonElementParentNode)

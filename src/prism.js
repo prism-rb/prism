@@ -175,6 +175,8 @@ function callMethod(reference, methodName) {
   }
 }
 
+window.callMethod = callMethod;
+
 function getValueString(reference, property) {
   const value = references.get(reference);
 
@@ -192,7 +194,23 @@ function getValueString(reference, property) {
 
 window.getValueString = getValueString;
 
-window.callMethod = callMethod;
+function getValueReference(reference, property) {
+  const value = references.get(reference);
+
+  try {
+    if (!value) {
+      throw new Error(`Attempted to look up ${property} on invalid reference: ${reference}`);
+    }
+
+    return getReference(value[property]);
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+window.getValueReference = getValueReference;
+
 
 window.Prism = { run };
 
