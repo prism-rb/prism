@@ -126,8 +126,6 @@ function run(element, main, config = {}) {
 let _refId = 0;
 
 const references = new Map();
-let windowReference = getReference(window);
-let documentReference = getReference(document);
 let args = [];
 
 
@@ -146,6 +144,8 @@ function getReference(obj) {
   const refId = _refId++;
 
   references.set(refId, obj);
+
+  return refId;
 }
 
 function getWindowReference() {
@@ -170,9 +170,27 @@ function callMethod(reference, methodName) {
 
     value[methodName](...args);
   } catch (e) {
+    console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
   }
 }
+
+function getValueString(reference, property) {
+  const value = references.get(reference);
+
+  try {
+    if (!value) {
+      throw new Error(`Attempted to look up ${property} on invalid reference: ${reference}`);
+    }
+
+    return value[property];
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+window.getValueString = getValueString;
 
 window.callMethod = callMethod;
 

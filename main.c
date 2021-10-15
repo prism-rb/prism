@@ -18,14 +18,14 @@ mrbc_context *c;
 
 mrb_value
 get_window_reference(mrb_state *mrb, mrb_value self){
-  return mrb_fixnum_value(EM_ASM_INT({
+  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
     return getWindowReference();
   }));
 }
 
 mrb_value
 get_document_reference(mrb_state *mrb, mrb_value self){
-  return mrb_fixnum_value(EM_ASM_INT({
+  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
     return getDocumentReference();
   }));
 }
@@ -33,7 +33,7 @@ get_document_reference(mrb_state *mrb, mrb_value self){
 
 mrb_value
 clear_args(mrb_state *mrb, mrb_value self) {
-  EM_ASM_({
+  MAIN_THREAD_EM_ASM({
     return clearArgs();
   });
 
@@ -45,7 +45,7 @@ set_arg_string(mrb_state *mrb, mrb_value self) {
   mrb_value index, value;
   mrb_get_args(mrb, "iS", &index, &value);
 
-  EM_ASM_({
+  MAIN_THREAD_EM_ASM({
     return setArgString($0, UTF8ToString($1), $2);
   }, index, RSTRING_PTR(value));
 
@@ -54,14 +54,37 @@ set_arg_string(mrb_state *mrb, mrb_value self) {
 
 mrb_value
 call_method(mrb_state *mrb, mrb_value self) {
-  mrb_value reference, name, arg_count, args;
+  mrb_value reference, name;
   mrb_get_args(mrb, "iS", &reference, &name);
 
-  EM_ASM_({
-    return callMethod($0, UTF8ToString($1), $2);
-  }, reference, RSTRING_PTR(name), arg_count);
+  MAIN_THREAD_EM_ASM({
+    return callMethod($0, UTF8ToString($1));
+  }, reference, RSTRING_PTR(name));
 
   return mrb_nil_value();
+}
+
+EM_JS(char*, get_value_string_, (mrb_value reference, const char* name), {
+  var string = getValueString(reference, UTF8ToString(name));
+  var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
+  var stringOnWasmHeap = _malloc(lengthBytes);
+
+  stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes);
+
+  return stringOnWasmHeap;
+});
+
+mrb_value
+get_value_string(mrb_state *mrb, mrb_value self) {
+  mrb_value reference, name;
+  mrb_get_args(mrb, "iS", &reference, &name);
+
+  char* value = get_value_string_(reference, RSTRING_PTR(name));
+  mrb_value return_str = mrb_str_new_cstr(mrb, value);
+
+  free(value);
+
+  return return_str;
 }
 
 mrb_value
@@ -69,7 +92,7 @@ add_event_listener(mrb_state *mrb, mrb_value self){
   mrb_value selector, event, id;
   mrb_get_args(mrb, "SSS", &selector, &event, &id);
 
-  EM_ASM_({
+  MAIN_THREAD_EM_ASM({
     var selector = UTF8ToString($0);
     var eventName = UTF8ToString($1);
     var id = UTF8ToString($2);
@@ -106,7 +129,7 @@ http_request(mrb_state *mrb, mrb_value self){
   mrb_value url, id;
   mrb_get_args(mrb, "SS", &url, &id);
 
-  EM_ASM_({
+  MAIN_THREAD_EM_ASM({
     const response = fetch(UTF8ToString($0));
     const id = UTF8ToString($1);
 
@@ -154,6 +177,14 @@ main(int argc, const char * argv[])
     "call_method",
     call_method,
     MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_value_string",
+    get_value_string,
+    MRB_ARGS_REQ(1)
   );
 
   mrb_define_class_method(

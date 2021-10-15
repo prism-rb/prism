@@ -200,20 +200,20 @@ function groupBy(f, items) {
     .map(([a, b]) => b);
 }
 
-function classNameForDefinition(definition, declaredInterfaces, requiresBaseClass) {
+function classNameForDefinition(definition, requiresBaseClass) {
   if (definition.inheritance) {
     return `${definition.name} < ${definition.inheritance}`;
   }
 
-  if (requiresBaseClass || declaredInterfaces.has(definition.name)) {
+  if (requiresBaseClass) {
     return definition.name;
   }
 
   return `${definition.name} < Prism::Binding`;
 }
 
-function classBinding(t, definition, declaredInterfaces, requiresBaseClass) {
-  const className = t  === "class" ? classNameForDefinition(definition, declaredInterfaces, requiresBaseClass) : definition.name;
+function classBinding(t, definition, requiresBaseClass) {
+  const className = t  === "class" ? classNameForDefinition(definition, requiresBaseClass) : definition.name;
   const members = groupBy(sortType, definition.members)
     .map((g) => g.map(generateMemberBinding).join("\n"))
     .join("\n\n");
@@ -226,11 +226,13 @@ function classBinding(t, definition, declaredInterfaces, requiresBaseClass) {
 
 function generateBinding(declaredInterfaces, definition, requiresBaseClass) {
   if (definition.type === "interface") {
-    return classBinding("class", definition, declaredInterfaces, requiresBaseClass.get(definition.name) || false);
+    declaredInterfaces.add(definition.name);
+    return classBinding("class", definition, requiresBaseClass.get(definition.name) || false);
   }
 
   if (definition.type === "interface mixin") {
-    return classBinding("module", definition, declaredInterfaces, requiresBaseClass.get(definition.name) || false);
+    declaredInterfaces.add(definition.name);
+    return classBinding("module", definition, requiresBaseClass.get(definition.name) || false);
   }
 
   if (
@@ -350,10 +352,6 @@ async function generateBindings() {
   const bindings = groupBy(definitionSort, reorderDefinitions(allInterfaces, definedClasses, requiresBaseClass))
     .map((a) => a.map(d => generateBinding(declaredInterfaces, d, requiresBaseClass)).join("\n\n"))
     .join("\n\n");
-
-  for (const definition of allInterfaces) {
-    declaredInterfaces.add(definition.name);
-  }
 
   fs.writeFileSync(
     `./bindings/bindings.rb`,
