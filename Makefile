@@ -1,7 +1,9 @@
+default: build/prism.js build/bundle.js
+
 build/prism.js: src/prism.js
 	npx browserify src/prism.js -o build/prism.js
 
-runtime:
+build/bundle.js: main.c
 	./script/build-prism-runtime
 
 mruby-build:

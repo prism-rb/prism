@@ -225,6 +225,14 @@ module Prism
       EventHandler.new(self, method_name).prevent_default
     end
 
+    def window
+      @window ||= JS::Window.new(InternalBindings.window_reference)
+    end
+
+    def document
+      @document ||= JS::Document.new(InternalBindings.document_reference)
+    end
+
     def _register_handler(handler)
       Prism.instances[handler.id] = handler # TODO - this is a memory leak
       handler.to_hash
@@ -374,6 +382,42 @@ module HTTP
 
       new(data["body"])
     end
+  end
+end
+
+module Prism::BindingHelpers
+  def self.included(base)
+    base.extend ClassMethods
+  end
+
+  module ClassMethods
+    def bind_attr_reader(name, options)
+
+    end
+
+    def bind_attr_accessor(name, options)
+
+    end
+
+    def bind_operation(name, options)
+      self.define_method(name) do |*args|
+        InternalBindings.clear_args
+
+        args.each_with_index do |arg, i|
+          InternalBindings.set_arg_string(i, arg)
+        end
+
+        InternalBindings.call_method(@js_value, name.to_s);
+      end
+    end
+  end
+end
+
+class Prism::Binding
+  include Prism::BindingHelpers
+
+  def initialize(js_value)
+    @js_value = js_value
   end
 end
 

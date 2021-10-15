@@ -1,0 +1,370 @@
+#!/usr/bin/env node
+
+const idl = require("@webref/idl");
+const fs = require("fs");
+
+function generateArgBinding(argDefinition) {
+  if (argDefinition.optional) {
+    return `${argDefinition.name} = UNDEFINED`;
+  }
+
+  return argDefinition.name;
+}
+
+function generateMethodBinding(name, definition) {
+  return `def ${name}(${definition.arguments
+    .map(generateArgBinding)
+    .join(", ")})\nend`;
+}
+
+function returnType(definition) {
+  let rt = "unknown";
+
+  if (definition.special && definition.special === "stringifier") {
+    rt = "DOMString";
+    return rt;
+  }
+
+  if (!definition.idlType) {
+    return JSON.stringify(definition, null, 2);
+  }
+
+  if (definition.idlType.type === "attribute-type") {
+    if (definition.idlType.union) {
+      rt = definition.idlType.idlType.map((t) => t.idlType).join(" | ");
+    } else {
+      rt = definition.idlType.idlType;
+    }
+  } else {
+    if (typeof definition.idlType.idlType === "string") {
+      rt = definition.idlType.idlType;
+    } else {
+      if (definition.idlType.union) {
+        rt = definition.idlType.idlType.map((t) => t.idlType).join(" | ");
+      } else if (definition.idlType.idlType.length > 1) {
+        rt = undefined;
+      } else {
+        rt = definition.idlType.idlType[0].idlType;
+      }
+    }
+  }
+
+  if (rt === undefined || (rt || "undefined").toString().includes("Object")) {
+    return JSON.stringify(definition, null, 2);
+  }
+
+  return rt;
+}
+
+function argType(argDef) {
+  if (argDef.idlType && typeof argDef.idlType.idlType === "string") {
+    return argDef.idlType.idlType;
+  }
+
+  if (argDef.idlType && typeof argDef.idlType.union) {
+    return argDef.idlType.idlType.map((i) => i.idlType).join(" | ");
+  }
+
+  return JSON.stringify(argDef.idlType);
+}
+
+function specialName(definition) {
+  if (definition.special === "deleter") {
+    return "_delete";
+  }
+
+  if (definition.special === "stringifier") {
+    return "toString";
+  }
+
+  if (definition.special === "getter" && definition.name === "") {
+    return "[]";
+  }
+
+  if (definition.special === "setter" && definition.name === "") {
+    return "[]=";
+  }
+
+  return definition.name;
+}
+
+function generateMemberBinding(memberDefinition) {
+  if (memberDefinition.type === "constructor") {
+    return comment(generateMethodBinding("initialize", memberDefinition));
+  }
+
+  if (memberDefinition.type === "attribute") {
+    if (memberDefinition.readonly) {
+      return `bind_attr_reader :${
+        memberDefinition.name
+      }, return_type: '${returnType(memberDefinition)}'`;
+    }
+
+    return `bind_attr_accessor :${
+      memberDefinition.name
+    }, return_type: '${returnType(memberDefinition)}'`;
+  }
+
+  if (memberDefinition.type === "operation") {
+    let name = specialName(memberDefinition);
+    const args = memberDefinition.arguments.map((a) =>
+      JSON.stringify({ name: a.name, type: argType(a), optional: a.optional })
+    );
+    const printedArgs =
+      args.length === 0
+        ? "args: []"
+        : `args: [\n${indent(args.join(",\n"))}\n]`;
+
+    if (name.trim().length === 0) {
+      name = JSON.stringify(memberDefinition, null, 2);
+    }
+
+    return `bind_operation :${name}, return_type: '${returnType(
+      memberDefinition
+    )}', ${printedArgs}`;
+  }
+
+  if (memberDefinition.type === "const") {
+    return `${memberDefinition.name} = ${memberDefinition.value.value}`;
+  }
+
+  return `# !!! Unknown member type: ${memberDefinition.type}\n${comment(
+    JSON.stringify(memberDefinition, null, 2)
+  )}`;
+}
+
+function indent(s, n = 2) {
+  let padding = "";
+
+  while (padding.length < n) {
+    padding += " ";
+  }
+
+  return s
+    .split("\n")
+    .map((line) => (line.trim().length > 0 ? padding + line : line))
+    .join("\n");
+}
+
+function comment(s) {
+  let padding = "";
+
+  return s
+    .split("\n")
+    .map((line) => (line.startsWith("#") ? line : "# " + line))
+    .join("\n");
+}
+
+function sortType(memberDefinition) {
+  if (memberDefinition.type === "constructor") {
+    return 0;
+  }
+
+  if (memberDefinition.type === "const") {
+    return 1;
+  }
+
+  if (memberDefinition.type === "attribute") {
+    return memberDefinition.readonly ? 2 : 3;
+  }
+
+  if (memberDefinition.type === "operation") {
+    return 4;
+  }
+
+  return 5;
+}
+
+function memberBindingSort(a, b) {
+  return sortType[a.type] - sortType[b.type];
+}
+
+function groupBy(f, items) {
+  const groups = new Map();
+
+  for (let item of items) {
+    const result = f(item);
+
+    let group = groups.get(result);
+
+    if (!group) {
+      group = [item];
+      groups.set(result, group);
+    } else {
+      group.push(item);
+    }
+  }
+
+  return Array.from(groups.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([a, b]) => b);
+}
+
+function classNameForDefinition(definition, declaredInterfaces, requiresBaseClass) {
+  if (definition.inheritance) {
+    return `${definition.name} < ${definition.inheritance}`;
+  }
+
+  if (requiresBaseClass || declaredInterfaces.has(definition.name)) {
+    return definition.name;
+  }
+
+  return `${definition.name} < Prism::Binding`;
+}
+
+function classBinding(t, definition, declaredInterfaces, requiresBaseClass) {
+  const className = t  === "class" ? classNameForDefinition(definition, declaredInterfaces, requiresBaseClass) : definition.name;
+  const members = groupBy(sortType, definition.members)
+    .map((g) => g.map(generateMemberBinding).join("\n"))
+    .join("\n\n");
+  let body = members;
+
+  body = "include Prism::BindingHelpers\n\n" + body;
+
+  return `${t} ${className}\n${indent(body)}\nend`;
+}
+
+function generateBinding(declaredInterfaces, definition, requiresBaseClass) {
+  if (definition.type === "interface") {
+    return classBinding("class", definition, declaredInterfaces, requiresBaseClass.get(definition.name) || false);
+  }
+
+  if (definition.type === "interface mixin") {
+    return classBinding("module", definition, declaredInterfaces, requiresBaseClass.get(definition.name) || false);
+  }
+
+  if (
+    definition.type === "dictionary" ||
+    definition.type === "callback" ||
+    definition.type === "callback interface" ||
+    definition.type === "callback interface" ||
+    definition.type === "enum"
+  ) {
+    return comment(
+      `Skipped definition, name=${definition.name}, type='${
+        definition.type
+      }':\n${JSON.stringify(definition, null, 2)}`
+    );
+  }
+
+  if (definition.type === "includes") {
+    const active = declaredInterfaces.has(definition.target) && declaredInterfaces.has(definition.includes)
+    const include = `${definition.target}.include(${definition.includes})`;
+
+    return active ? include : comment(include);
+  }
+
+  return (
+    "# !!! Unknown definition type: " +
+    definition.type +
+    "\n" +
+    comment(JSON.stringify(definition, null, 2))
+  );
+}
+
+function definitionSort(definition) {
+  if (definition.type === "includes") {
+    return 1;
+  }
+
+  return 0;
+}
+
+function reorderDefinitions(definitions, definedClasses, requiresBaseClass) {
+  const output = [];
+  const classesAwaitingDependencies = new Map();
+  const baseClassDefined = new Set();
+
+  function resolveDependency(definition) {
+    output.push(definition);
+    definedClasses.add(definition.name);
+
+    if (definition.inheritance) {
+      baseClassDefined.add(definition.name);
+    }
+
+    const depsAwaiting = classesAwaitingDependencies.get(definition.name) || [];
+
+    classesAwaitingDependencies.delete(definition.name);
+
+    depsAwaiting.forEach(resolveDependency);
+  }
+
+  function deferDependency(definition, awaiting = definition.inheritance) {
+    let depsAwaiting = classesAwaitingDependencies.get(definition.inheritance);
+
+    if (!depsAwaiting) {
+      depsAwaiting = [];
+      classesAwaitingDependencies.set(awaiting, depsAwaiting);
+    }
+
+    depsAwaiting.push(definition);
+  }
+
+  for (const definition of definitions) {
+    if (!('inheritance' in definition)) {
+      output.push(definition);
+      continue;
+    }
+
+    if (definition.inheritance) {
+      if (definedClasses.has(definition.inheritance)) {
+        resolveDependency(definition);
+      } else {
+        deferDependency(definition);
+      }
+    } else {
+      if (requiresBaseClass.get(definition.name) && !baseClassDefined.has(definition.name)) {
+        deferDependency(definition, definition.name);
+      } else {
+        resolveDependency(definition);
+      }
+    }
+  }
+
+  if (classesAwaitingDependencies.size > 0) {
+    console.log("Could not find dependencies for:");
+
+    for (const [key, values] of classesAwaitingDependencies) {
+      console.log(`${key} -> ${values.map(v => v.name).join(',')}`);
+    }
+  }
+
+  return output;
+}
+
+async function generateBindings() {
+  const parsedFiles = await idl.parseAll();
+
+  const includedDefinitions = ["dom", "html"];
+  let declaredInterfaces = new Set();
+  const definedClasses = new Set();
+  const requiresBaseClass = new Map();
+
+  const allInterfaces = Array.prototype.concat.apply([], includedDefinitions.map(b => parsedFiles[b]));
+
+  for (const definition of allInterfaces) {
+    requiresBaseClass.set(definition.name, requiresBaseClass.get(definition.name) || definition.inheritance);
+  }
+
+  const bindings = groupBy(definitionSort, reorderDefinitions(allInterfaces, definedClasses, requiresBaseClass))
+    .map((a) => a.map(d => generateBinding(declaredInterfaces, d, requiresBaseClass)).join("\n\n"))
+    .join("\n\n");
+
+  for (const definition of allInterfaces) {
+    declaredInterfaces.add(definition.name);
+  }
+
+  fs.writeFileSync(
+    `./bindings/bindings.rb`,
+    `module JS\n${indent(bindings)}\nend`
+  );
+
+  /*
+  for (const [shortname, ast] of Object.entries(parsedFiles)) {
+    // do something with the ast
+    console.log(shortname);
+  } */
+}
+
+generateBindings();

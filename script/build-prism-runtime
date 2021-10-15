@@ -10,15 +10,13 @@ end
 `mkdir -p build`
 Dir.chdir("build")
 
-puts "Compiling ruby code to mruby bytecode..."
-
 `cp #{__dir__}/../main.c main.c`
 
 puts "Compiling to Wasm..."
 `
   emcc \
     -s ALLOW_MEMORY_GROWTH=1 \
-    -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event', '_http_response', '_load']" \
+    -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event', '_http_response', '_load', '_print_backtrace']" \
     -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
     -s WASM=1 \
     -Oz \

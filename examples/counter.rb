@@ -19,13 +19,18 @@ class Counter < Prism::Component
     @remove.call
   end
 
+  def alert
+    window.alert("Wow this works! THe count is #{@count}")
+  end
+
   def render
     div(".counter", {}, [
       div("", {}, [count.to_s]),
       button({:onClick => call(:change).with(+1)}, [text("+")]),
       button({:onClick => call(:change).with(-1)}, [text("-")]),
       button({:onClick => call(:reset)}, [text("Reset")]),
-      button({:onClick => call(:remove)}, [text("Delete")])
+      button({:onClick => call(:remove)}, [text("Delete")]),
+      button({:onClick => call(:alert)}, [text("Alert")])
     ])
   end
 end

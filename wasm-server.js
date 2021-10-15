@@ -25,6 +25,10 @@ const proxy = http.createServer((req, res) => {
     p = path.join(__dirname, 'build', path.basename(p));
   }
 
+  if (p.startsWith('prism-ruby/bindings')) {
+    p = path.join(__dirname, 'bindings', path.basename(p));
+  }
+
   if (p.startsWith('prism-ruby')) {
     p = path.join(__dirname, 'src', path.basename(p));
   }

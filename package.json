@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "main": "test.js",
   "dependencies": {
+    "@webref/idl": "^2.7.0",
     "asm-dom": "^0.6.3",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "snabbdom": "^0.7.3"
+    "snabbdom": "^0.7.3",
+    "webidl2": "^24.1.2"
   },
   "devDependencies": {
     "browserify": "^16.5.0"

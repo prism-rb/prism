@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+files=$(grep '+++ b/' mruby.patch | sed 's/\+\+\+ b\/\(.*\)/mruby\/\1/g' | tr "\n" " ")
+
+echo "Removing $files"
+
+for file in $files
+do
+  rm "$file"
+done
