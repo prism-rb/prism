@@ -973,7 +973,7 @@ function run(element, main, config = {}) {
   load(modulesToLoad, main, config);
 }
 
-let _refId = 0;
+let _refId = 1;
 
 const references = new Map();
 let args = [];
@@ -991,6 +991,10 @@ window.clearArgs = clearArgs;
 window.setArgString = setArgString;
 
 function getReference(obj) {
+  if (obj == null) {
+    return 0;
+  }
+
   const refId = _refId++;
 
   references.set(refId, obj);
@@ -1026,6 +1030,23 @@ function callMethod(reference, methodName) {
 }
 
 window.callMethod = callMethod;
+
+function callMethodReturningReference(reference, methodName) {
+  const value = references.get(reference);
+
+  try {
+    if (!value) {
+      throw new Error(`Attempted to call ${methodName} on invalid reference: ${reference}`);
+    }
+
+    return getReference(value[methodName](...args));
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+window.callMethodReturningReference = callMethodReturningReference;
 
 function getValueString(reference, property) {
   const value = references.get(reference);

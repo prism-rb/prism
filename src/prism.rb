@@ -225,14 +225,6 @@ module Prism
       EventHandler.new(self, method_name).prevent_default
     end
 
-    def window
-      @window ||= JS::Window.new(InternalBindings.window_reference)
-    end
-
-    def document
-      @document ||= JS::Document.new(InternalBindings.document_reference)
-    end
-
     def _register_handler(handler)
       Prism.instances[handler.id] = handler # TODO - this is a memory leak
       handler.to_hash
@@ -391,7 +383,7 @@ module Prism::BindingHelpers
   end
 
   module ClassMethods
-    def bind_attr_reader(name, options)
+    private def bind_attr_reader(name, options)
       self.define_method(name) do |*args|
         begin
           _class = JS.const_get(options[:return_type])
@@ -400,20 +392,24 @@ module Prism::BindingHelpers
         end
 
         if _class
-          _class.new(InternalBindings.get_value_reference(@js_value, name.to_s));
+          reference = InternalBindings.get_value_reference(@js_value, name.to_s)
+          if reference == 0
+            nil
+          else
+            _class.new(reference)
+          end
         else
           InternalBindings.get_value_string(@js_value, name.to_s);
         end
       end
     end
 
-    def bind_attr_accessor(name, options)
-      self.define_method(name) do |*args|
-        InternalBindings.get_value_string(@js_value, name.to_s);
-      end
+    private def bind_attr_accessor(name, options)
+      bind_attr_reader(name, options)
+      # TODO - attr writer
     end
 
-    def bind_operation(name, options)
+    private def bind_operation(name, options)
       self.define_method(name) do |*args|
         InternalBindings.clear_args
 
@@ -421,8 +417,47 @@ module Prism::BindingHelpers
           InternalBindings.set_arg_string(i, arg)
         end
 
-        InternalBindings.call_method(@js_value, name.to_s);
+        begin
+          _class = JS.const_get(options[:return_type])
+        rescue NameError => e
+          _class = nil
+        end
+
+        if _class
+          reference = InternalBindings.call_method_reference(@js_value, name.to_s)
+
+          if reference == 0
+            nil
+          else
+            _class.new(reference)
+          end
+        else
+          InternalBindings.call_method(@js_value, name.to_s);
+        end
       end
+    end
+  end
+end
+
+module JS
+  module Global
+    def self.included(base)
+
+      base.define_method(:window) do
+        JS::Global.window
+      end
+
+      base.define_method(:document) do
+        JS::Global.document
+      end
+    end
+
+    def self.window
+      @@window ||= JS::Window.new(InternalBindings.window_reference)
+    end
+
+    def self.document
+      @@document ||= JS::Document.new(InternalBindings.document_reference)
     end
   end
 end

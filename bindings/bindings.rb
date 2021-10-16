@@ -8296,6 +8296,803 @@ module JS
   #   "partial": false
   # }
 
+  # !!! Unknown definition type: typedef
+  # {
+  #   "type": "typedef",
+  #   "name": "HeadersInit",
+  #   "idlType": {
+  #     "type": "typedef-type",
+  #     "extAttrs": [],
+  #     "generic": "",
+  #     "nullable": false,
+  #     "union": true,
+  #     "idlType": [
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "sequence",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": [
+  #           {
+  #             "type": null,
+  #             "extAttrs": [],
+  #             "generic": "sequence",
+  #             "nullable": false,
+  #             "union": false,
+  #             "idlType": [
+  #               {
+  #                 "type": null,
+  #                 "extAttrs": [],
+  #                 "generic": "",
+  #                 "nullable": false,
+  #                 "union": false,
+  #                 "idlType": "ByteString"
+  #               }
+  #             ]
+  #           }
+  #         ]
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "record",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": [
+  #           {
+  #             "extAttrs": [],
+  #             "generic": "",
+  #             "nullable": false,
+  #             "union": false,
+  #             "idlType": "ByteString"
+  #           },
+  #           {
+  #             "type": null,
+  #             "extAttrs": [],
+  #             "generic": "",
+  #             "nullable": false,
+  #             "union": false,
+  #             "idlType": "ByteString"
+  #           }
+  #         ]
+  #       }
+  #     ]
+  #   },
+  #   "extAttrs": []
+  # }
+
+  class Headers < Prism::Binding
+    include Prism::BindingHelpers
+
+    # def initialize(init = UNDEFINED)
+    # end
+
+    bind_operation :append, return_type: 'undefined', args: [
+      {"name":"name","type":"ByteString","optional":false},
+      {"name":"value","type":"ByteString","optional":false}
+    ]
+    bind_operation :delete, return_type: 'undefined', args: [
+      {"name":"name","type":"ByteString","optional":false}
+    ]
+    bind_operation :get, return_type: 'ByteString', args: [
+      {"name":"name","type":"ByteString","optional":false}
+    ]
+    bind_operation :has, return_type: 'boolean', args: [
+      {"name":"name","type":"ByteString","optional":false}
+    ]
+    bind_operation :set, return_type: 'undefined', args: [
+      {"name":"name","type":"ByteString","optional":false},
+      {"name":"value","type":"ByteString","optional":false}
+    ]
+
+    # !!! Unknown member type: iterable
+    # {
+    #   "type": "iterable",
+    #   "idlType": [
+    #     {
+    #       "type": null,
+    #       "extAttrs": [],
+    #       "generic": "",
+    #       "nullable": false,
+    #       "union": false,
+    #       "idlType": "ByteString"
+    #     },
+    #     {
+    #       "type": null,
+    #       "extAttrs": [],
+    #       "generic": "",
+    #       "nullable": false,
+    #       "union": false,
+    #       "idlType": "ByteString"
+    #     }
+    #   ],
+    #   "arguments": [],
+    #   "extAttrs": [],
+    #   "readonly": false,
+    #   "async": false
+    # }
+  end
+
+  # !!! Unknown definition type: typedef
+  # {
+  #   "type": "typedef",
+  #   "name": "XMLHttpRequestBodyInit",
+  #   "idlType": {
+  #     "type": "typedef-type",
+  #     "extAttrs": [],
+  #     "generic": "",
+  #     "nullable": false,
+  #     "union": true,
+  #     "idlType": [
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "Blob"
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "BufferSource"
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "FormData"
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "URLSearchParams"
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "USVString"
+  #       }
+  #     ]
+  #   },
+  #   "extAttrs": []
+  # }
+
+  # !!! Unknown definition type: typedef
+  # {
+  #   "type": "typedef",
+  #   "name": "BodyInit",
+  #   "idlType": {
+  #     "type": "typedef-type",
+  #     "extAttrs": [],
+  #     "generic": "",
+  #     "nullable": false,
+  #     "union": true,
+  #     "idlType": [
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "ReadableStream"
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "XMLHttpRequestBodyInit"
+  #       }
+  #     ]
+  #   },
+  #   "extAttrs": []
+  # }
+
+  module Body
+    include Prism::BindingHelpers
+
+    bind_attr_reader :body, return_type: 'ReadableStream'
+    bind_attr_reader :bodyUsed, return_type: 'boolean'
+
+    bind_operation :arrayBuffer, return_type: 'ArrayBuffer', args: []
+    bind_operation :blob, return_type: 'Blob', args: []
+    bind_operation :formData, return_type: 'FormData', args: []
+    bind_operation :json, return_type: 'any', args: []
+    bind_operation :text, return_type: 'USVString', args: []
+  end
+
+  # !!! Unknown definition type: typedef
+  # {
+  #   "type": "typedef",
+  #   "name": "RequestInfo",
+  #   "idlType": {
+  #     "type": "typedef-type",
+  #     "extAttrs": [],
+  #     "generic": "",
+  #     "nullable": false,
+  #     "union": true,
+  #     "idlType": [
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "Request"
+  #       },
+  #       {
+  #         "type": null,
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "USVString"
+  #       }
+  #     ]
+  #   },
+  #   "extAttrs": []
+  # }
+
+  class Request < Prism::Binding
+    include Prism::BindingHelpers
+
+    # def initialize(input, init = UNDEFINED)
+    # end
+
+    bind_attr_reader :method, return_type: 'ByteString'
+    bind_attr_reader :url, return_type: 'USVString'
+    bind_attr_reader :headers, return_type: 'Headers'
+    bind_attr_reader :destination, return_type: 'RequestDestination'
+    bind_attr_reader :referrer, return_type: 'USVString'
+    bind_attr_reader :referrerPolicy, return_type: 'ReferrerPolicy'
+    bind_attr_reader :mode, return_type: 'RequestMode'
+    bind_attr_reader :credentials, return_type: 'RequestCredentials'
+    bind_attr_reader :cache, return_type: 'RequestCache'
+    bind_attr_reader :redirect, return_type: 'RequestRedirect'
+    bind_attr_reader :integrity, return_type: 'DOMString'
+    bind_attr_reader :keepalive, return_type: 'boolean'
+    bind_attr_reader :isReloadNavigation, return_type: 'boolean'
+    bind_attr_reader :isHistoryNavigation, return_type: 'boolean'
+    bind_attr_reader :signal, return_type: 'AbortSignal'
+
+    bind_operation :clone, return_type: 'Request', args: []
+  end
+
+  # Skipped definition, name=RequestInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "RequestInit",
+  #   "inheritance": null,
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "method",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "ByteString"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "headers",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "HeadersInit"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "body",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": true,
+  #         "union": false,
+  #         "idlType": "BodyInit"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "referrer",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "USVString"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "referrerPolicy",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "ReferrerPolicy"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "mode",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "RequestMode"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "credentials",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "RequestCredentials"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "cache",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "RequestCache"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "redirect",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "RequestRedirect"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "integrity",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "DOMString"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "keepalive",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "signal",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": true,
+  #         "union": false,
+  #         "idlType": "AbortSignal"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "window",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "any"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  # Skipped definition, name=RequestDestination, type='enum':
+  # {
+  #   "type": "enum",
+  #   "name": "RequestDestination",
+  #   "values": [
+  #     {
+  #       "type": "enum-value",
+  #       "value": ""
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "audio"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "audioworklet"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "document"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "embed"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "font"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "frame"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "iframe"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "image"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "manifest"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "object"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "paintworklet"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "report"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "script"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "sharedworker"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "style"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "track"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "video"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "worker"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "xslt"
+  #     }
+  #   ],
+  #   "extAttrs": []
+  # }
+
+  # Skipped definition, name=RequestMode, type='enum':
+  # {
+  #   "type": "enum",
+  #   "name": "RequestMode",
+  #   "values": [
+  #     {
+  #       "type": "enum-value",
+  #       "value": "navigate"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "same-origin"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "no-cors"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "cors"
+  #     }
+  #   ],
+  #   "extAttrs": []
+  # }
+
+  # Skipped definition, name=RequestCredentials, type='enum':
+  # {
+  #   "type": "enum",
+  #   "name": "RequestCredentials",
+  #   "values": [
+  #     {
+  #       "type": "enum-value",
+  #       "value": "omit"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "same-origin"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "include"
+  #     }
+  #   ],
+  #   "extAttrs": []
+  # }
+
+  # Skipped definition, name=RequestCache, type='enum':
+  # {
+  #   "type": "enum",
+  #   "name": "RequestCache",
+  #   "values": [
+  #     {
+  #       "type": "enum-value",
+  #       "value": "default"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "no-store"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "reload"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "no-cache"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "force-cache"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "only-if-cached"
+  #     }
+  #   ],
+  #   "extAttrs": []
+  # }
+
+  # Skipped definition, name=RequestRedirect, type='enum':
+  # {
+  #   "type": "enum",
+  #   "name": "RequestRedirect",
+  #   "values": [
+  #     {
+  #       "type": "enum-value",
+  #       "value": "follow"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "error"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "manual"
+  #     }
+  #   ],
+  #   "extAttrs": []
+  # }
+
+  class Response < Prism::Binding
+    include Prism::BindingHelpers
+
+    # def initialize(body = UNDEFINED, init = UNDEFINED)
+    # end
+
+    bind_attr_reader :type, return_type: 'ResponseType'
+    bind_attr_reader :url, return_type: 'USVString'
+    bind_attr_reader :redirected, return_type: 'boolean'
+    bind_attr_reader :status, return_type: 'unsigned short'
+    bind_attr_reader :ok, return_type: 'boolean'
+    bind_attr_reader :statusText, return_type: 'ByteString'
+    bind_attr_reader :headers, return_type: 'Headers'
+
+    bind_operation :error, return_type: 'Response', args: []
+    bind_operation :redirect, return_type: 'Response', args: [
+      {"name":"url","type":"USVString","optional":false},
+      {"name":"status","type":"unsigned short","optional":true}
+    ]
+    bind_operation :clone, return_type: 'Response', args: []
+  end
+
+  # Skipped definition, name=ResponseInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "ResponseInit",
+  #   "inheritance": null,
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "status",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned short"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "200"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "statusText",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "ByteString"
+  #       },
+  #       "default": {
+  #         "type": "string",
+  #         "value": ""
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "headers",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "HeadersInit"
+  #       },
+  #       "default": null,
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  # Skipped definition, name=ResponseType, type='enum':
+  # {
+  #   "type": "enum",
+  #   "name": "ResponseType",
+  #   "values": [
+  #     {
+  #       "type": "enum-value",
+  #       "value": "basic"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "cors"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "default"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "error"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "opaque"
+  #     },
+  #     {
+  #       "type": "enum-value",
+  #       "value": "opaqueredirect"
+  #     }
+  #   ],
+  #   "extAttrs": []
+  # }
+
+  module WindowOrWorkerGlobalScope
+    include Prism::BindingHelpers
+
+    bind_operation :fetch, return_type: 'Response', args: [
+      {"name":"input","type":"RequestInfo","optional":false},
+      {"name":"init","type":"RequestInit","optional":true}
+    ]
+  end
+
   Document.include(NonElementParentNode)
 
   DocumentFragment.include(NonElementParentNode)
@@ -8459,4 +9256,8 @@ module JS
   Window.include(WindowLocalStorage)
 
   HTMLFrameSetElement.include(WindowEventHandlers)
+
+  Request.include(Body)
+
+  Response.include(Body)
 end

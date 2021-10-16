@@ -338,7 +338,7 @@ function reorderDefinitions(definitions, definedClasses, requiresBaseClass) {
 async function generateBindings() {
   const parsedFiles = await idl.parseAll();
 
-  const includedDefinitions = ["dom", "html", "xhr", "navigator"];
+  const includedDefinitions = ["dom", "html", "xhr", "navigator", "fetch"];
   let declaredInterfaces = new Set();
   const definedClasses = new Set();
   const requiresBaseClass = new Map();

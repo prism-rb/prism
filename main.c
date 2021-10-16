@@ -16,16 +16,24 @@ mrb_value app;
 mrb_state *mrb;
 mrbc_context *c;
 
+mrb_value mrb_reference(mrb_state *mrb, int maybe_int) {
+  if (maybe_int == 0) {
+    return mrb_nil_value();
+  }
+
+  return mrb_int_value(mrb, maybe_int);
+}
+
 mrb_value
 get_window_reference(mrb_state *mrb, mrb_value self){
-  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
     return getWindowReference();
   }));
 }
 
 mrb_value
 get_document_reference(mrb_state *mrb, mrb_value self){
-  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
     return getDocumentReference();
   }));
 }
@@ -64,6 +72,16 @@ call_method(mrb_state *mrb, mrb_value self) {
   return mrb_nil_value();
 }
 
+mrb_value
+call_method_reference(mrb_state *mrb, mrb_value self) {
+  mrb_value reference, name;
+  mrb_get_args(mrb, "iS", &reference, &name);
+
+  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
+    return callMethodReturningReference($0, UTF8ToString($1));
+  }, reference, RSTRING_PTR(name)));
+}
+
 EM_JS(char*, get_value_string_, (mrb_value reference, const char* name), {
   var string = getValueString(reference, UTF8ToString(name));
   var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
@@ -92,7 +110,7 @@ get_value_reference(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
   mrb_get_args(mrb, "iS", &reference, &name);
 
-  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
     return getValueReference($0, UTF8ToString($1));
   }, reference, RSTRING_PTR(name)));
 }
@@ -186,6 +204,14 @@ main(int argc, const char * argv[])
     binding_class,
     "call_method",
     call_method,
+    MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "call_method_reference",
+    call_method_reference,
     MRB_ARGS_REQ(2)
   );
 
