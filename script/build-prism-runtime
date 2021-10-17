@@ -20,6 +20,8 @@ puts "Compiling to Wasm..."
     -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
     -s WASM=1 \
     -Oz \
+    -g4 \
+    --source-map-base $PWD/build \
     -I #{__dir__}/../mruby/include \
     main.c \
     #{__dir__}/../mruby/build/emscripten/lib/libmruby_core.a \

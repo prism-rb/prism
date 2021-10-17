@@ -964,7 +964,9 @@ function run(element, main, config = {}) {
   currentContainer = element;
   modulesToLoad = [
     fetchAndLoad("/prism-ruby/prism.rb"),
-    fetchAndLoad("/prism-ruby/bindings/bindings.rb"),
+    fetchAndLoad("/prism-ruby/bindings/bindings.0.rb"),
+    fetchAndLoad("/prism-ruby/bindings/bindings.1.rb"),
+    fetchAndLoad("/prism-ruby/bindings/bindings.2.rb"),
     fetchAndLoad(main),
   ];
 
@@ -981,6 +983,10 @@ function clearArgs() {
 }
 
 function setArgString(index, value) {
+  args[index] = value;
+}
+
+function setArgNumber(index, value) {
   args[index] = value;
 }
 
@@ -1103,6 +1109,17 @@ function getArgString(index) {
   }
 }
 
+function getArgNumber(index) {
+  const value = callbackArgs[index];
+
+  try {
+    return value;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
 function getArgReference(index) {
   const value = callbackArgs[index];
 
@@ -1133,6 +1150,7 @@ window.Prism = {
   run,
   eval: _eval,
   setArgString,
+  setArgNumber,
   setArgCallback,
   clearArgs,
   getValueReference,
@@ -1144,6 +1162,7 @@ window.Prism = {
   getWindowReference,
   getDocumentReference,
   getArgString,
+  getArgNumber,
   getArgReference,
   getArgClassName
 };

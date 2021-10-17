@@ -62,6 +62,18 @@ set_arg_string(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_arg_number(mrb_state *mrb, mrb_value self) {
+  mrb_value index, value;
+  mrb_get_args(mrb, "ii", &index, &value);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setArgNumber($0, $1);
+  }, index, value);
+
+  return mrb_nil_value();
+}
+
+mrb_value
 set_arg_callback(mrb_state *mrb, mrb_value self) {
   mrb_value index, reference;
   mrb_get_args(mrb, "ii", &index, &reference);
@@ -149,6 +161,16 @@ get_arg_string(mrb_state *mrb, mrb_value self) {
   free(value);
 
   return return_str;
+}
+
+mrb_value
+get_arg_number(mrb_state *mrb, mrb_value self) {
+  mrb_value index;
+  mrb_get_args(mrb, "i", &index);
+
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.getArgNumber($0);
+  }, index));
 }
 
 mrb_value
@@ -309,6 +331,14 @@ main(int argc, const char * argv[])
     MRB_ARGS_REQ(1)
   );
 
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_arg_number",
+    get_arg_number,
+    MRB_ARGS_REQ(1)
+  );
+
 
   mrb_define_class_method(
     mrb,
@@ -341,6 +371,15 @@ main(int argc, const char * argv[])
     binding_class,
     "set_arg_string",
     set_arg_string,
+    MRB_ARGS_REQ(2)
+  );
+
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "set_arg_number",
+    set_arg_number,
     MRB_ARGS_REQ(2)
   );
 
@@ -401,7 +440,9 @@ int load(char* main, char* config) {
   const char* class_name;
   mrb_define_global_const(mrb, "JSON_CONFIG", mrb_str_new_cstr(mrb, config));
   load_file("prism-ruby/prism.rb");
-  load_file("prism-ruby/bindings/bindings.rb");
+  load_file("prism-ruby/bindings/bindings.0.rb");
+  load_file("prism-ruby/bindings/bindings.1.rb");
+  load_file("prism-ruby/bindings/bindings.2.rb");
   app = load_file(main);
   struct RClass* prism_module = mrb_module_get(mrb, "Prism");
   struct RClass* mount_class = mrb_class_get_under(mrb, prism_module, "Mount");

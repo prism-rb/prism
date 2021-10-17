@@ -238,10 +238,23 @@ function generateBinding(declaredInterfaces, definition, requiresBaseClass) {
     return classBinding("module", definition, requiresBaseClass.get(definition.name) || false);
   }
 
+  if (definition.type === "callback") {
+    return `${definition.name} = CallbackInterface.new("${definition.name}", ${printArgs(definition)})`
+  }
+
   if (definition.type === "callback interface") {
     if (definition.members.length === 1 && definition.members[0].type === "operation") {
       return `${definition.name} = CallbackInterface.new("${definition.name}", return_type: "${returnType(definition.members[0])}", ${printArgs(definition.members[0])})`
     }
+  }
+
+  if (definition.type === "typedef") {
+    if (definition.idlType.union) {
+      return `${definition.name} = TypeDef.new("${definition.name}", types: [${definition.idlType.idlType.map(a => `"${a.idlType}"`).join(',')}])`
+    } else {
+      return `${definition.name} = TypeDef.new("${definition.name}", types: ["${definition.idlType.idlType}"])`
+    }
+
   }
 
   if (
@@ -343,8 +356,31 @@ function reorderDefinitions(definitions, definedClasses, requiresBaseClass) {
   return output;
 }
 
-const preamble = `CallbackInterface = Struct.new(:name, :options)`;
+const preamble = `
+CallbackInterface = Struct.new(:name, :options)
+TypeDef = Struct.new(:name, :types)
+`.trim();
 
+
+function inGroupsOf(n, items) {
+  if (items.length === 0) {
+    return [];
+  }
+
+  let group = [];
+  const output = [group];
+
+  for (var i = 0; i < items.length; i++) {
+    if (group.length == n) {
+      group = [];
+      output.push(group);
+    }
+
+    group.push(items[i]);
+  }
+
+  return output;
+}
 async function generateBindings() {
   const parsedFiles = await idl.parseAll();
 
@@ -359,14 +395,18 @@ async function generateBindings() {
     requiresBaseClass.set(definition.name, requiresBaseClass.get(definition.name) || definition.inheritance);
   }
 
-  const bindings = groupBy(definitionSort, reorderDefinitions(allInterfaces, definedClasses, requiresBaseClass))
-    .map((a) => a.map(d => generateBinding(declaredInterfaces, d, requiresBaseClass)).join("\n\n"))
-    .join("\n\n");
+  const groupedBindings = groupBy(definitionSort, reorderDefinitions(allInterfaces, definedClasses, requiresBaseClass))
+    .map((a) => a.map(d => generateBinding(declaredInterfaces, d, requiresBaseClass)))
 
-  fs.writeFileSync(
-    `./bindings/bindings.rb`,
-    `module JS\n${indent(preamble+'\n\n'+bindings)}\nend`
-  );
+  const allBindings = Array.prototype.concat.apply([], groupedBindings);
+
+  inGroupsOf(200, allBindings).forEach((setOfBindings, i) => {
+    fs.writeFileSync(
+      `./bindings/bindings.${i}.rb`,
+      `module JS\n${indent(setOfBindings.join('\n\n'))}\nend`
+    );
+  });
+
 
   /*
   for (const [shortname, ast] of Object.entries(parsedFiles)) {

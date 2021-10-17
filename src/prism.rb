@@ -400,7 +400,12 @@ class Prism::ExternalReferences
     descriptor_and_callable[:descriptor][:options][:args].each_with_index do |arg_description, i|
       if arg_description[:type] == "DOMString"
         args.push(InternalBindings.get_arg_string(i))
-        continue
+        next
+      end
+
+      if arg_description[:type] == "DOMHighResTimeStamp"
+        args.push(InternalBindings.get_arg_number(i))
+        next
       end
 
       _js_class = InternalBindings.get_arg_class_name(i)
@@ -473,6 +478,8 @@ module Prism::BindingHelpers
           case arg_description[:type]
           when "DOMString"
             InternalBindings.set_arg_string(i, arg.to_s)
+          when "long"
+            InternalBindings.set_arg_number(i, arg.to_i)
           else
             _class = JS.const_get(arg_description[:type])
 
@@ -480,6 +487,25 @@ module Prism::BindingHelpers
               reference = Prism::ExternalReferences.get_reference({descriptor: _class, callable: arg})
 
               InternalBindings.set_arg_callback(i, reference)
+            elsif _class && _class.is_a?(JS::TypeDef)
+              set = false
+              _class.types[:types].each do |type|
+                if type === "DOMString" && arg.is_a?(String)
+                  InternalBindings.set_arg_string(i, arg)
+                  set = true
+                  break
+                end
+
+                if type == "Function" && arg.respond_to?(:call)
+                  reference = Prism::ExternalReferences.get_reference({descriptor: JS::CallbackInterface.new("Function", args: []), callable: arg})
+
+                  InternalBindings.set_arg_callback(i, reference)
+                  set = true
+                  break
+                end
+              end
+
+              raise ArgumentError.new("Don't know how to handle arg type: #{_class} #{arg}") unless set
             else
               raise ArgumentError.new("Don't know how to handle arg type: #{arg_description[:type]}")
             end
@@ -509,6 +535,9 @@ module Prism::BindingHelpers
 end
 
 module JS
+  CallbackInterface = Struct.new(:name, :options)
+  TypeDef = Struct.new(:name, :types)
+
   module Global
     def self.included(base)
 

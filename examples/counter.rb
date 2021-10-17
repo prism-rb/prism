@@ -30,7 +30,6 @@ class Counter < Prism::Component
   end
 
   def render
-    window.setTimeout(-> { puts "hi" }, 1000)
     div(".counter", {}, [
       div("", {}, [count.to_s]),
       button({:onClick => call(:change).with(+1)}, [text("+")]),
