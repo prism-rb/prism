@@ -21,14 +21,6 @@ class Counter < Prism::Component
     @remove.call
   end
 
-  def alert
-    window.alert("Wow this works! THe count is #{@count}")
-  end
-
-  def call_fetch
-    window.fetch('https://google.com')
-  end
-
   def render
     div(".counter", {}, [
       div("", {}, [count.to_s]),
@@ -36,8 +28,6 @@ class Counter < Prism::Component
       button({:onClick => call(:change).with(-1)}, [text("-")]),
       button({:onClick => call(:reset)}, [text("Reset")]),
       button({:onClick => call(:remove)}, [text("Delete")]),
-      button({:onClick => call(:alert)}, [text("Alert")]),
-      button({:onClick => call(:call_fetch)}, [text("Fetch")])
     ])
   end
 end
