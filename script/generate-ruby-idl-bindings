@@ -88,6 +88,16 @@ function specialName(definition) {
   return definition.name;
 }
 
+function printArgs(definition) {
+    const args = definition.arguments.map((a) =>
+      JSON.stringify({ name: a.name, type: argType(a), optional: a.optional })
+    );
+    return (
+      args.length === 0
+        ? "args: []"
+        : `args: [\n${indent(args.join(",\n"))}\n]`
+    );
+}
 function generateMemberBinding(memberDefinition) {
   if (memberDefinition.type === "constructor") {
     return comment(generateMethodBinding("initialize", memberDefinition));
@@ -107,13 +117,6 @@ function generateMemberBinding(memberDefinition) {
 
   if (memberDefinition.type === "operation") {
     let name = specialName(memberDefinition);
-    const args = memberDefinition.arguments.map((a) =>
-      JSON.stringify({ name: a.name, type: argType(a), optional: a.optional })
-    );
-    const printedArgs =
-      args.length === 0
-        ? "args: []"
-        : `args: [\n${indent(args.join(",\n"))}\n]`;
 
     if (name.trim().length === 0) {
       name = JSON.stringify(memberDefinition, null, 2);
@@ -121,7 +124,7 @@ function generateMemberBinding(memberDefinition) {
 
     return `bind_operation :${name}, return_type: '${returnType(
       memberDefinition
-    )}', ${printedArgs}`;
+    )}', ${printArgs(memberDefinition)}`;
   }
 
   if (memberDefinition.type === "const") {
@@ -235,10 +238,15 @@ function generateBinding(declaredInterfaces, definition, requiresBaseClass) {
     return classBinding("module", definition, requiresBaseClass.get(definition.name) || false);
   }
 
+  if (definition.type === "callback interface") {
+    if (definition.members.length === 1 && definition.members[0].type === "operation") {
+      return `${definition.name} = CallbackInterface.new("${definition.name}", return_type: "${returnType(definition.members[0])}", ${printArgs(definition.members[0])})`
+    }
+  }
+
   if (
     definition.type === "dictionary" ||
     definition.type === "callback" ||
-    definition.type === "callback interface" ||
     definition.type === "callback interface" ||
     definition.type === "enum"
   ) {
@@ -335,10 +343,12 @@ function reorderDefinitions(definitions, definedClasses, requiresBaseClass) {
   return output;
 }
 
+const preamble = `CallbackInterface = Struct.new(:name, :options)`;
+
 async function generateBindings() {
   const parsedFiles = await idl.parseAll();
 
-  const includedDefinitions = ["dom", "html", "xhr", "navigator", "fetch"];
+  const includedDefinitions = ["dom", "html", "xhr", "navigator", "fetch", "uievents"];
   let declaredInterfaces = new Set();
   const definedClasses = new Set();
   const requiresBaseClass = new Map();
@@ -355,7 +365,7 @@ async function generateBindings() {
 
   fs.writeFileSync(
     `./bindings/bindings.rb`,
-    `module JS\n${indent(bindings)}\nend`
+    `module JS\n${indent(preamble+'\n\n'+bindings)}\nend`
   );
 
   /*

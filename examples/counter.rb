@@ -1,4 +1,6 @@
 class Counter < Prism::Component
+  include JS::Global
+
   attr_reader :count
 
   def initialize(count, &remove)
@@ -23,14 +25,20 @@ class Counter < Prism::Component
     window.alert("Wow this works! THe count is #{@count}")
   end
 
+  def call_fetch
+    window.fetch('https://google.com')
+  end
+
   def render
+    window.setTimeout(-> { puts "hi" }, 1000)
     div(".counter", {}, [
       div("", {}, [count.to_s]),
       button({:onClick => call(:change).with(+1)}, [text("+")]),
       button({:onClick => call(:change).with(-1)}, [text("-")]),
       button({:onClick => call(:reset)}, [text("Reset")]),
       button({:onClick => call(:remove)}, [text("Delete")]),
-      button({:onClick => call(:alert)}, [text("Alert")])
+      button({:onClick => call(:alert)}, [text("Alert")]),
+      button({:onClick => call(:call_fetch)}, [text("Fetch")])
     ])
   end
 end

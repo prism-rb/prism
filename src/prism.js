@@ -25,8 +25,6 @@ function stringifyEvent(e) {
   );
 }
 
-window.stringifyEvent = stringifyEvent;
-
 function rubyVTreeToSnabbdom(rvtree) {
   if (rvtree.type === "text") {
     return rvtree.content;
@@ -128,7 +126,6 @@ let _refId = 1;
 const references = new Map();
 let args = [];
 
-
 function clearArgs() {
   args = [];
 }
@@ -137,8 +134,24 @@ function setArgString(index, value) {
   args[index] = value;
 }
 
-window.clearArgs = clearArgs;
-window.setArgString = setArgString;
+let callbackArgs = [];
+
+const registry = new FinalizationRegistry(cleanupReference);
+
+function cleanupReference(reference) {
+  Module.ccall("cleanup_reference", "void", ["int"], [reference]);
+}
+
+function setArgCallback(index, reference) {
+  function callbackHandler(...args) {
+    callbackArgs = args;
+    Module.ccall("handle_callback", "void", ["int"], [reference]);
+  };
+
+  args[index] = callbackHandler;
+
+  registry.register(callbackHandler, reference);
+}
 
 function getReference(obj) {
   if (obj == null) {
@@ -156,30 +169,28 @@ function getWindowReference() {
   return getReference(window);
 }
 
-window.getWindowReference = getWindowReference;
 
 function getDocumentReference() {
   return getReference(document);
 }
 
-window.getDocumentReference = getDocumentReference;
 
 function callMethod(reference, methodName) {
   const value = references.get(reference);
 
   try {
     if (!value) {
-      throw new Error(`Attempted to call ${methodName} on invalid reference: ${reference}`);
+      throw new Error(
+        `Attempted to call ${methodName} on invalid reference: ${reference}`
+      );
     }
 
-    value[methodName](...args);
+    value[methodName].apply(value, args);
   } catch (e) {
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
   }
 }
-
-window.callMethod = callMethod;
 
 function callMethodReturningReference(reference, methodName) {
   const value = references.get(reference);
@@ -196,14 +207,15 @@ function callMethodReturningReference(reference, methodName) {
   }
 }
 
-window.callMethodReturningReference = callMethodReturningReference;
 
 function getValueString(reference, property) {
   const value = references.get(reference);
 
   try {
     if (!value) {
-      throw new Error(`Attempted to look up ${property} on invalid reference: ${reference}`);
+      throw new Error(
+        `Attempted to look up ${property} on invalid reference: ${reference}`
+      );
     }
 
     return value[property];
@@ -213,14 +225,14 @@ function getValueString(reference, property) {
   }
 }
 
-window.getValueString = getValueString;
-
 function getValueReference(reference, property) {
   const value = references.get(reference);
 
   try {
     if (!value) {
-      throw new Error(`Attempted to look up ${property} on invalid reference: ${reference}`);
+      throw new Error(
+        `Attempted to look up ${property} on invalid reference: ${reference}`
+      );
     }
 
     return getReference(value[property]);
@@ -230,10 +242,61 @@ function getValueReference(reference, property) {
   }
 }
 
-window.getValueReference = getValueReference;
+function getArgString(index) {
+  const value = callbackArgs[index];
 
+  try {
+    return value.toString();
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
 
-window.Prism = { run, eval };
+function getArgReference(index) {
+  const value = callbackArgs[index];
+
+  try {
+    return getReference(value);
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+function getArgClassName(index) {
+  const value = callbackArgs[index];
+
+  try {
+    if (!value || !value.constructor) {
+      return "";
+    }
+
+    return value.constructor.name;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+window.Prism = {
+  run,
+  eval: _eval,
+  setArgString,
+  setArgCallback,
+  clearArgs,
+  getValueReference,
+  getValueString,
+  callMethod,
+  callMethodReturningReference,
+  render,
+  stringifyEvent,
+  getWindowReference,
+  getDocumentReference,
+  getArgString,
+  getArgReference,
+  getArgClassName
+};
 
 function render() {
   const rvtree = JSON.parse(Module.ccall("render", "string", []));
@@ -243,8 +306,6 @@ function render() {
 
   currentContainer = vtree;
 }
-
-window.render = render;
 
 function fetchAndLoad(name) {
   return fetch(name)
@@ -258,7 +319,7 @@ function fetchAndLoad(name) {
     });
 }
 
-function eval(s) {
+function _eval(s) {
   return Module.ccall("eval", "string", ["string"], [s]);
 }
 

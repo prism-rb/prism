@@ -13,6 +13,7 @@
 #include <mruby/error.h>
 
 mrb_value app;
+struct RClass* external_references;
 mrb_state *mrb;
 mrbc_context *c;
 
@@ -27,14 +28,14 @@ mrb_value mrb_reference(mrb_state *mrb, int maybe_int) {
 mrb_value
 get_window_reference(mrb_state *mrb, mrb_value self){
   return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
-    return getWindowReference();
+    return Prism.getWindowReference();
   }));
 }
 
 mrb_value
 get_document_reference(mrb_state *mrb, mrb_value self){
   return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
-    return getDocumentReference();
+    return Prism.getDocumentReference();
   }));
 }
 
@@ -42,7 +43,7 @@ get_document_reference(mrb_state *mrb, mrb_value self){
 mrb_value
 clear_args(mrb_state *mrb, mrb_value self) {
   MAIN_THREAD_EM_ASM({
-    return clearArgs();
+    return Prism.clearArgs();
   });
 
   return mrb_nil_value();
@@ -54,8 +55,20 @@ set_arg_string(mrb_state *mrb, mrb_value self) {
   mrb_get_args(mrb, "iS", &index, &value);
 
   MAIN_THREAD_EM_ASM({
-    return setArgString($0, UTF8ToString($1), $2);
+    return Prism.setArgString($0, UTF8ToString($1));
   }, index, RSTRING_PTR(value));
+
+  return mrb_nil_value();
+}
+
+mrb_value
+set_arg_callback(mrb_state *mrb, mrb_value self) {
+  mrb_value index, reference;
+  mrb_get_args(mrb, "ii", &index, &reference);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setArgCallback($0, $1);
+  }, index, reference);
 
   return mrb_nil_value();
 }
@@ -66,7 +79,7 @@ call_method(mrb_state *mrb, mrb_value self) {
   mrb_get_args(mrb, "iS", &reference, &name);
 
   MAIN_THREAD_EM_ASM({
-    return callMethod($0, UTF8ToString($1));
+    return Prism.callMethod($0, UTF8ToString($1));
   }, reference, RSTRING_PTR(name));
 
   return mrb_nil_value();
@@ -78,12 +91,12 @@ call_method_reference(mrb_state *mrb, mrb_value self) {
   mrb_get_args(mrb, "iS", &reference, &name);
 
   return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
-    return callMethodReturningReference($0, UTF8ToString($1));
+    return Prism.callMethodReturningReference($0, UTF8ToString($1));
   }, reference, RSTRING_PTR(name)));
 }
 
 EM_JS(char*, get_value_string_, (mrb_value reference, const char* name), {
-  var string = getValueString(reference, UTF8ToString(name));
+  var string = Prism.getValueString(reference, UTF8ToString(name));
   var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
   var stringOnWasmHeap = _malloc(lengthBytes);
 
@@ -111,9 +124,66 @@ get_value_reference(mrb_state *mrb, mrb_value self) {
   mrb_get_args(mrb, "iS", &reference, &name);
 
   return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
-    return getValueReference($0, UTF8ToString($1));
+    return Prism.getValueReference($0, UTF8ToString($1));
   }, reference, RSTRING_PTR(name)));
 }
+
+EM_JS(char*, get_arg_string_, (mrb_value index), {
+  var string = Prism.getArgString(index);
+  var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
+  var stringOnWasmHeap = _malloc(lengthBytes);
+
+  stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes);
+
+  return stringOnWasmHeap;
+});
+
+mrb_value
+get_arg_string(mrb_state *mrb, mrb_value self) {
+  mrb_value index;
+  mrb_get_args(mrb, "i", &index);
+
+  char* value = get_arg_string_(index);
+  mrb_value return_str = mrb_str_new_cstr(mrb, value);
+
+  free(value);
+
+  return return_str;
+}
+
+mrb_value
+get_arg_reference(mrb_state *mrb, mrb_value self) {
+  mrb_value index;
+  mrb_get_args(mrb, "i", &index);
+
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.getArgReference($0);
+  }, index));
+}
+
+EM_JS(char*, get_arg_class_name_, (mrb_value index), {
+  var string = Prism.getArgClassName(index);
+  var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
+  var stringOnWasmHeap = _malloc(lengthBytes);
+
+  stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes);
+
+  return stringOnWasmHeap;
+});
+
+mrb_value
+get_arg_class_name(mrb_state *mrb, mrb_value self) {
+  mrb_value index;
+  mrb_get_args(mrb, "i", &index);
+
+  char* value = get_arg_class_name_(index);
+  mrb_value return_str = mrb_str_new_cstr(mrb, value);
+
+  free(value);
+
+  return return_str;
+}
+
 
 mrb_value
 add_event_listener(mrb_state *mrb, mrb_value self){
@@ -142,10 +212,10 @@ add_event_listener(mrb_state *mrb, mrb_value self){
           'event',
           'void',
           ['string', 'string', 'string'],
-          [stringifyEvent(event), id]
+          [Prism.stringifyEvent(event), id]
         );
 
-        render();
+        Prism.render();
       });
     };
   }, RSTRING_PTR(selector), RSTRING_PTR(event), RSTRING_PTR(id));
@@ -234,6 +304,33 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "get_arg_string",
+    get_arg_string,
+    MRB_ARGS_REQ(1)
+  );
+
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_arg_class_name",
+    get_arg_class_name,
+    MRB_ARGS_REQ(1)
+  );
+
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_arg_reference",
+    get_arg_reference,
+    MRB_ARGS_REQ(1)
+  );
+
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "clear_args",
     clear_args,
     MRB_ARGS_REQ(0)
@@ -244,6 +341,14 @@ main(int argc, const char * argv[])
     binding_class,
     "set_arg_string",
     set_arg_string,
+    MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "set_arg_callback",
+    set_arg_callback,
     MRB_ARGS_REQ(2)
   );
 
@@ -300,6 +405,7 @@ int load(char* main, char* config) {
   app = load_file(main);
   struct RClass* prism_module = mrb_module_get(mrb, "Prism");
   struct RClass* mount_class = mrb_class_get_under(mrb, prism_module, "Mount");
+  external_references = mrb_class_get_under(mrb, prism_module, "ExternalReferences");
 
   if(!mrb_obj_is_kind_of(mrb, app, mount_class)) {
     class_name = mrb_obj_classname(mrb, app);
@@ -359,6 +465,24 @@ void http_response(char* text, char* id) {
   mrb_value str = mrb_str_new_cstr(mrb, text);
   mrb_value str2 = mrb_str_new_cstr(mrb, id);
   mrb_funcall(mrb, app, "http_response", 2, str, str2);
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+}
+
+void handle_callback(int reference) {
+  mrb_funcall(mrb, mrb_obj_value(external_references), "handle_callback", 1, mrb_int_value(mrb, reference));
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+}
+
+void cleanup_reference(int reference) {
+  mrb_funcall(mrb, mrb_obj_value(external_references), "cleanup_reference", 1, mrb_int_value(mrb, reference));
 
   if (mrb->exc) {
     mrb_print_error(mrb);

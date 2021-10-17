@@ -377,6 +377,59 @@ module HTTP
   end
 end
 
+class Prism::ExternalReferences
+  @@reference_id = 0
+  @@references = {}
+
+
+  def self.get_reference(descriptor_and_callable)
+    id = @@reference_id
+
+    @@references[id] = descriptor_and_callable
+
+    @@reference_id += 1
+
+    id
+  end
+
+  def self.handle_callback(reference)
+    args = []
+
+    descriptor_and_callable = @@references[reference]
+
+    descriptor_and_callable[:descriptor][:options][:args].each_with_index do |arg_description, i|
+      if arg_description[:type] == "DOMString"
+        args.push(InternalBindings.get_arg_string(i))
+        continue
+      end
+
+      _js_class = InternalBindings.get_arg_class_name(i)
+      _js_class = nil if _js_class == ""
+
+      _class = JS.const_get(_js_class || arg_description[:type])
+
+      if _class
+        arg_reference = InternalBindings.get_arg_reference(i)
+
+        if arg_reference
+          args.push(_class.new(arg_reference))
+        else
+          args.push(nil)
+        end
+      end
+    end
+
+    callable = descriptor_and_callable[:callable]
+
+    callable.call(*args.slice(0...callable.parameters.size))
+  end
+
+  def self.cleanup_reference(reference)
+    puts "Delete reference -> #{reference}"
+    @@references.delete(reference)
+  end
+end
+
 module Prism::BindingHelpers
   def self.included(base)
     base.extend ClassMethods
@@ -393,6 +446,7 @@ module Prism::BindingHelpers
 
         if _class
           reference = InternalBindings.get_value_reference(@js_value, name.to_s)
+
           if reference == 0
             nil
           else
@@ -410,11 +464,26 @@ module Prism::BindingHelpers
     end
 
     private def bind_operation(name, options)
-      self.define_method(name) do |*args|
+      self.define_method(name) do |*args, &block|
         InternalBindings.clear_args
 
-        args.each_with_index do |arg, i|
-          InternalBindings.set_arg_string(i, arg)
+        args.push(block) if block
+
+        args.zip(options[:args]).each_with_index do |(arg, arg_description), i|
+          case arg_description[:type]
+          when "DOMString"
+            InternalBindings.set_arg_string(i, arg.to_s)
+          else
+            _class = JS.const_get(arg_description[:type])
+
+            if _class && _class.is_a?(JS::CallbackInterface)
+              reference = Prism::ExternalReferences.get_reference({descriptor: _class, callable: arg})
+
+              InternalBindings.set_arg_callback(i, reference)
+            else
+              raise ArgumentError.new("Don't know how to handle arg type: #{arg_description[:type]}")
+            end
+          end
         end
 
         begin

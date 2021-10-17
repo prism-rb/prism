@@ -1,4 +1,6 @@
 module JS
+  CallbackInterface = Struct.new(:name, :options)
+
   class Event < Prism::Binding
     include Prism::BindingHelpers
 
@@ -166,48 +168,9 @@ module JS
     ]
   end
 
-  # Skipped definition, name=EventListener, type='callback interface':
-  # {
-  #   "type": "callback interface",
-  #   "name": "EventListener",
-  #   "inheritance": null,
-  #   "members": [
-  #     {
-  #       "type": "operation",
-  #       "name": "handleEvent",
-  #       "idlType": {
-  #         "type": "return-type",
-  #         "extAttrs": [],
-  #         "generic": "",
-  #         "nullable": false,
-  #         "union": false,
-  #         "idlType": "undefined"
-  #       },
-  #       "arguments": [
-  #         {
-  #           "type": "argument",
-  #           "name": "event",
-  #           "extAttrs": [],
-  #           "idlType": {
-  #             "type": "argument-type",
-  #             "extAttrs": [],
-  #             "generic": "",
-  #             "nullable": false,
-  #             "union": false,
-  #             "idlType": "Event"
-  #           },
-  #           "default": null,
-  #           "optional": false,
-  #           "variadic": false
-  #         }
-  #       ],
-  #       "extAttrs": [],
-  #       "special": ""
-  #     }
-  #   ],
-  #   "extAttrs": [],
-  #   "partial": false
-  # }
+  EventListener = CallbackInterface.new("EventListener", return_type: "undefined", args: [
+    {"name":"event","type":"Event","optional":false}
+  ])
 
   # Skipped definition, name=EventListenerOptions, type='dictionary':
   # {
@@ -1820,48 +1783,9 @@ module JS
     ]
   end
 
-  # Skipped definition, name=XPathNSResolver, type='callback interface':
-  # {
-  #   "type": "callback interface",
-  #   "name": "XPathNSResolver",
-  #   "inheritance": null,
-  #   "members": [
-  #     {
-  #       "type": "operation",
-  #       "name": "lookupNamespaceURI",
-  #       "idlType": {
-  #         "type": "return-type",
-  #         "extAttrs": [],
-  #         "generic": "",
-  #         "nullable": true,
-  #         "union": false,
-  #         "idlType": "DOMString"
-  #       },
-  #       "arguments": [
-  #         {
-  #           "type": "argument",
-  #           "name": "prefix",
-  #           "extAttrs": [],
-  #           "idlType": {
-  #             "type": "argument-type",
-  #             "extAttrs": [],
-  #             "generic": "",
-  #             "nullable": true,
-  #             "union": false,
-  #             "idlType": "DOMString"
-  #           },
-  #           "default": null,
-  #           "optional": false,
-  #           "variadic": false
-  #         }
-  #       ],
-  #       "extAttrs": [],
-  #       "special": ""
-  #     }
-  #   ],
-  #   "extAttrs": [],
-  #   "partial": false
-  # }
+  XPathNSResolver = CallbackInterface.new("XPathNSResolver", return_type: "DOMString", args: [
+    {"name":"prefix","type":"DOMString","optional":false}
+  ])
 
   module XPathEvaluatorBase
     include Prism::BindingHelpers
@@ -9090,6 +9014,1074 @@ module JS
     bind_operation :fetch, return_type: 'Response', args: [
       {"name":"input","type":"RequestInfo","optional":false},
       {"name":"init","type":"RequestInit","optional":true}
+    ]
+  end
+
+  class UIEvent < Event
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    bind_attr_reader :view, return_type: 'Window'
+    bind_attr_reader :detail, return_type: 'long'
+  end
+
+  # Skipped definition, name=UIEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "UIEventInit",
+  #   "inheritance": "EventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "view",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": true,
+  #         "union": false,
+  #         "idlType": "Window"
+  #       },
+  #       "default": {
+  #         "type": "null"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "detail",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  class FocusEvent < UIEvent
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    bind_attr_reader :relatedTarget, return_type: 'EventTarget'
+  end
+
+  # Skipped definition, name=FocusEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "FocusEventInit",
+  #   "inheritance": "UIEventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "relatedTarget",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": true,
+  #         "union": false,
+  #         "idlType": "EventTarget"
+  #       },
+  #       "default": {
+  #         "type": "null"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  class MouseEvent < UIEvent
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    bind_attr_reader :screenX, return_type: 'long'
+    bind_attr_reader :screenY, return_type: 'long'
+    bind_attr_reader :clientX, return_type: 'long'
+    bind_attr_reader :clientY, return_type: 'long'
+    bind_attr_reader :ctrlKey, return_type: 'boolean'
+    bind_attr_reader :shiftKey, return_type: 'boolean'
+    bind_attr_reader :altKey, return_type: 'boolean'
+    bind_attr_reader :metaKey, return_type: 'boolean'
+    bind_attr_reader :button, return_type: 'short'
+    bind_attr_reader :buttons, return_type: 'unsigned short'
+    bind_attr_reader :relatedTarget, return_type: 'EventTarget'
+
+    bind_operation :getModifierState, return_type: 'boolean', args: [
+      {"name":"keyArg","type":"DOMString","optional":false}
+    ]
+  end
+
+  class DragEvent < MouseEvent
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    bind_attr_reader :dataTransfer, return_type: 'DataTransfer'
+  end
+
+  # Skipped definition, name=EventModifierInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "EventModifierInit",
+  #   "inheritance": "UIEventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "ctrlKey",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "shiftKey",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "altKey",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "metaKey",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierAltGraph",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierCapsLock",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierFn",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierFnLock",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierHyper",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierNumLock",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierScrollLock",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierSuper",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierSymbol",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "modifierSymbolLock",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  # Skipped definition, name=MouseEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "MouseEventInit",
+  #   "inheritance": "EventModifierInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "screenX",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "screenY",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "clientX",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "clientY",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "button",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "short"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "buttons",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned short"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "relatedTarget",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": true,
+  #         "union": false,
+  #         "idlType": "EventTarget"
+  #       },
+  #       "default": {
+  #         "type": "null"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  # Skipped definition, name=DragEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "DragEventInit",
+  #   "inheritance": "MouseEventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "dataTransfer",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": true,
+  #         "union": false,
+  #         "idlType": "DataTransfer"
+  #       },
+  #       "default": {
+  #         "type": "null"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  class WheelEvent < MouseEvent
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    DOM_DELTA_PIXEL = 0x00
+    DOM_DELTA_LINE = 0x01
+    DOM_DELTA_PAGE = 0x02
+
+    bind_attr_reader :deltaX, return_type: 'double'
+    bind_attr_reader :deltaY, return_type: 'double'
+    bind_attr_reader :deltaZ, return_type: 'double'
+    bind_attr_reader :deltaMode, return_type: 'unsigned long'
+  end
+
+  # Skipped definition, name=WheelEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "WheelEventInit",
+  #   "inheritance": "MouseEventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "deltaX",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "double"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0.0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "deltaY",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "double"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0.0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "deltaZ",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "double"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0.0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "deltaMode",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  class InputEvent < UIEvent
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    bind_attr_reader :data, return_type: 'DOMString'
+    bind_attr_reader :isComposing, return_type: 'boolean'
+    bind_attr_reader :inputType, return_type: 'DOMString'
+  end
+
+  # Skipped definition, name=InputEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "InputEventInit",
+  #   "inheritance": "UIEventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "data",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": true,
+  #         "union": false,
+  #         "idlType": "DOMString"
+  #       },
+  #       "default": {
+  #         "type": "null"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "isComposing",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "inputType",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "DOMString"
+  #       },
+  #       "default": {
+  #         "type": "string",
+  #         "value": ""
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  class KeyboardEvent < UIEvent
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    DOM_KEY_LOCATION_STANDARD = 0x00
+    DOM_KEY_LOCATION_LEFT = 0x01
+    DOM_KEY_LOCATION_RIGHT = 0x02
+    DOM_KEY_LOCATION_NUMPAD = 0x03
+
+    bind_attr_reader :key, return_type: 'DOMString'
+    bind_attr_reader :code, return_type: 'DOMString'
+    bind_attr_reader :location, return_type: 'unsigned long'
+    bind_attr_reader :ctrlKey, return_type: 'boolean'
+    bind_attr_reader :shiftKey, return_type: 'boolean'
+    bind_attr_reader :altKey, return_type: 'boolean'
+    bind_attr_reader :metaKey, return_type: 'boolean'
+    bind_attr_reader :repeat, return_type: 'boolean'
+    bind_attr_reader :isComposing, return_type: 'boolean'
+
+    bind_operation :getModifierState, return_type: 'boolean', args: [
+      {"name":"keyArg","type":"DOMString","optional":false}
+    ]
+  end
+
+  # Skipped definition, name=KeyboardEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "KeyboardEventInit",
+  #   "inheritance": "EventModifierInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "key",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "DOMString"
+  #       },
+  #       "default": {
+  #         "type": "string",
+  #         "value": ""
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "code",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "DOMString"
+  #       },
+  #       "default": {
+  #         "type": "string",
+  #         "value": ""
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "location",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "repeat",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "isComposing",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "boolean"
+  #       },
+  #       "default": {
+  #         "type": "boolean",
+  #         "value": false
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  class CompositionEvent < UIEvent
+    include Prism::BindingHelpers
+
+    # def initialize(type, eventInitDict = UNDEFINED)
+    # end
+
+    bind_attr_reader :data, return_type: 'DOMString'
+  end
+
+  # Skipped definition, name=CompositionEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "CompositionEventInit",
+  #   "inheritance": "UIEventInit",
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "data",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "DOMString"
+  #       },
+  #       "default": {
+  #         "type": "string",
+  #         "value": ""
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": false
+  # }
+
+  class UIEvent
+    include Prism::BindingHelpers
+
+    bind_operation :initUIEvent, return_type: 'undefined', args: [
+      {"name":"typeArg","type":"DOMString","optional":false},
+      {"name":"bubblesArg","type":"boolean","optional":true},
+      {"name":"cancelableArg","type":"boolean","optional":true},
+      {"name":"viewArg","type":"Window","optional":true},
+      {"name":"detailArg","type":"long","optional":true}
+    ]
+  end
+
+  class MouseEvent
+    include Prism::BindingHelpers
+
+    bind_operation :initMouseEvent, return_type: 'undefined', args: [
+      {"name":"typeArg","type":"DOMString","optional":false},
+      {"name":"bubblesArg","type":"boolean","optional":true},
+      {"name":"cancelableArg","type":"boolean","optional":true},
+      {"name":"viewArg","type":"Window","optional":true},
+      {"name":"detailArg","type":"long","optional":true},
+      {"name":"screenXArg","type":"long","optional":true},
+      {"name":"screenYArg","type":"long","optional":true},
+      {"name":"clientXArg","type":"long","optional":true},
+      {"name":"clientYArg","type":"long","optional":true},
+      {"name":"ctrlKeyArg","type":"boolean","optional":true},
+      {"name":"altKeyArg","type":"boolean","optional":true},
+      {"name":"shiftKeyArg","type":"boolean","optional":true},
+      {"name":"metaKeyArg","type":"boolean","optional":true},
+      {"name":"buttonArg","type":"short","optional":true},
+      {"name":"relatedTargetArg","type":"EventTarget","optional":true}
+    ]
+  end
+
+  class KeyboardEvent
+    include Prism::BindingHelpers
+
+    bind_operation :initKeyboardEvent, return_type: 'undefined', args: [
+      {"name":"typeArg","type":"DOMString","optional":false},
+      {"name":"bubblesArg","type":"boolean","optional":true},
+      {"name":"cancelableArg","type":"boolean","optional":true},
+      {"name":"viewArg","type":"Window","optional":true},
+      {"name":"keyArg","type":"DOMString","optional":true},
+      {"name":"locationArg","type":"unsigned long","optional":true},
+      {"name":"ctrlKey","type":"boolean","optional":true},
+      {"name":"altKey","type":"boolean","optional":true},
+      {"name":"shiftKey","type":"boolean","optional":true},
+      {"name":"metaKey","type":"boolean","optional":true}
+    ]
+  end
+
+  class CompositionEvent
+    include Prism::BindingHelpers
+
+    bind_operation :initCompositionEvent, return_type: 'undefined', args: [
+      {"name":"typeArg","type":"DOMString","optional":false},
+      {"name":"bubblesArg","type":"boolean","optional":true},
+      {"name":"cancelableArg","type":"boolean","optional":true},
+      {"name":"viewArg","type":"WindowProxy","optional":true},
+      {"name":"dataArg","type":"DOMString","optional":true}
+    ]
+  end
+
+  class UIEvent
+    include Prism::BindingHelpers
+
+    bind_attr_reader :which, return_type: 'unsigned long'
+  end
+
+  # Skipped definition, name=UIEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "UIEventInit",
+  #   "inheritance": null,
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "which",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": true
+  # }
+
+  class KeyboardEvent
+    include Prism::BindingHelpers
+
+    bind_attr_reader :charCode, return_type: 'unsigned long'
+    bind_attr_reader :keyCode, return_type: 'unsigned long'
+  end
+
+  # Skipped definition, name=KeyboardEventInit, type='dictionary':
+  # {
+  #   "type": "dictionary",
+  #   "name": "KeyboardEventInit",
+  #   "inheritance": null,
+  #   "members": [
+  #     {
+  #       "type": "field",
+  #       "name": "charCode",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     },
+  #     {
+  #       "type": "field",
+  #       "name": "keyCode",
+  #       "extAttrs": [],
+  #       "idlType": {
+  #         "type": "dictionary-type",
+  #         "extAttrs": [],
+  #         "generic": "",
+  #         "nullable": false,
+  #         "union": false,
+  #         "idlType": "unsigned long"
+  #       },
+  #       "default": {
+  #         "type": "number",
+  #         "value": "0"
+  #       },
+  #       "required": false
+  #     }
+  #   ],
+  #   "extAttrs": [],
+  #   "partial": true
+  # }
+
+  class MutationEvent < Event
+    include Prism::BindingHelpers
+
+    MODIFICATION = 1
+    ADDITION = 2
+    REMOVAL = 3
+
+    bind_attr_reader :relatedNode, return_type: 'Node'
+    bind_attr_reader :prevValue, return_type: 'DOMString'
+    bind_attr_reader :newValue, return_type: 'DOMString'
+    bind_attr_reader :attrName, return_type: 'DOMString'
+    bind_attr_reader :attrChange, return_type: 'unsigned short'
+
+    bind_operation :initMutationEvent, return_type: 'undefined', args: [
+      {"name":"typeArg","type":"DOMString","optional":false},
+      {"name":"bubblesArg","type":"boolean","optional":true},
+      {"name":"cancelableArg","type":"boolean","optional":true},
+      {"name":"relatedNodeArg","type":"Node","optional":true},
+      {"name":"prevValueArg","type":"DOMString","optional":true},
+      {"name":"newValueArg","type":"DOMString","optional":true},
+      {"name":"attrNameArg","type":"DOMString","optional":true},
+      {"name":"attrChangeArg","type":"unsigned short","optional":true}
     ]
   end
 
