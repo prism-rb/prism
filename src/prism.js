@@ -233,7 +233,7 @@ function getValueReference(reference, property) {
 window.getValueReference = getValueReference;
 
 
-window.Prism = { run };
+window.Prism = { run, eval };
 
 function render() {
   const rvtree = JSON.parse(Module.ccall("render", "string", []));
@@ -256,6 +256,10 @@ function fetchAndLoad(name) {
 
       return { name, text };
     });
+}
+
+function eval(s) {
+  return Module.ccall("eval", "string", ["string"], [s]);
 }
 
 function load(modulesToLoad, main, config = {}) {

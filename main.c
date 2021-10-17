@@ -322,6 +322,17 @@ char* render() {
   return RSTRING_PTR(result);
 }
 
+char* eval(char* input, int len) {
+  mrb_int ai = mrb_gc_arena_save(mrb);
+  mrb_value result = mrb_load_string_cxt(mrb, input, c);
+  mrb_gc_arena_restore(mrb, ai);
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+  return RSTRING_PTR(mrb_obj_as_string(mrb, result));
+}
+
 void dispatch(char* message) {
   mrb_value str = mrb_str_new_cstr(mrb, message);
   mrb_gc_register(mrb, str);

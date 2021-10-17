@@ -1,5 +1,8 @@
 .DS_Store
 
+emsdk/
+emscripten/
+
 slides/build/*.wasm
 slides/build/*.js
 slides/build/*.wast
