@@ -964,9 +964,6 @@ function run(element, main, config = {}) {
   currentContainer = element;
   modulesToLoad = [
     fetchAndLoad("/prism-ruby/prism.rb"),
-    fetchAndLoad("/prism-ruby/bindings/bindings.0.rb"),
-    fetchAndLoad("/prism-ruby/bindings/bindings.1.rb"),
-    fetchAndLoad("/prism-ruby/bindings/bindings.2.rb"),
     fetchAndLoad(main),
   ];
 
@@ -1009,6 +1006,18 @@ function setArgCallback(index, reference) {
   registry.register(callbackHandler, reference);
 }
 
+function setObjectValue(reference, name, value) {
+  const referenceValue = references.get(reference);
+
+  try {
+    referenceValue[name] = value;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+
 function getReference(obj) {
   if (obj == null) {
     return 0;
@@ -1048,15 +1057,15 @@ function callMethod(reference, methodName) {
   }
 }
 
-function callMethodReturningReference(reference, methodName) {
+function callMethodReturningReference(reference) {
   const value = references.get(reference);
 
   try {
     if (!value) {
-      throw new Error(`Attempted to call ${methodName} on invalid reference: ${reference}`);
+      throw new Error(`Attempted to call invalid reference: ${reference}, ${value}`);
     }
 
-    return getReference(value[methodName](...args));
+    return getReference(value(...args));
   } catch (e) {
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
@@ -1064,17 +1073,11 @@ function callMethodReturningReference(reference, methodName) {
 }
 
 
-function getValueString(reference, property) {
+function getValueString(reference) {
   const value = references.get(reference);
 
   try {
-    if (!value) {
-      throw new Error(
-        `Attempted to look up ${property} on invalid reference: ${reference}`
-      );
-    }
-
-    return value[property];
+    return value.toString();
   } catch (e) {
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
@@ -1092,6 +1095,26 @@ function getValueReference(reference, property) {
     }
 
     return getReference(value[property]);
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+function getTypeOf(reference) {
+  const value = references.get(reference);
+
+  try {
+    return typeof value;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+function getArgCount() {
+  try {
+    return callbackArgs.length;
   } catch (e) {
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
@@ -1152,6 +1175,7 @@ window.Prism = {
   setArgString,
   setArgNumber,
   setArgCallback,
+  setObjectValue,
   clearArgs,
   getValueReference,
   getValueString,
@@ -1161,10 +1185,12 @@ window.Prism = {
   stringifyEvent,
   getWindowReference,
   getDocumentReference,
+  getArgCount,
   getArgString,
   getArgNumber,
   getArgReference,
-  getArgClassName
+  getArgClassName,
+  getTypeOf
 };
 
 function render() {

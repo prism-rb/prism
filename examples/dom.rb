@@ -6,6 +6,8 @@ class DOMExample < Prism::Component
 
     window.setTimeout(-> { puts "timeout fired!" }, 1000)
 
+    document.body.style.background = "red"
+
     puts window.location.href
   end
 
@@ -17,10 +19,15 @@ class DOMExample < Prism::Component
     window.fetch('https://google.com')
   end
 
+  def change_color(value)
+    document.body.style.background = value
+  end
+
   def render
     div(".dom-example", {}, [
       button({:onClick => call(:alert)}, [text("Alert")]),
-      button({:onClick => call(:call_fetch)}, [text("Fetch")])
+      button({:onClick => call(:call_fetch)}, [text("Fetch")]),
+      input(onInput: call(:change_color).with_target_data(:value))
     ])
   end
 end

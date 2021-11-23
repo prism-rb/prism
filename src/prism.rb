@@ -397,31 +397,10 @@ class Prism::ExternalReferences
 
     descriptor_and_callable = @@references[reference]
 
-    descriptor_and_callable[:descriptor][:options][:args].each_with_index do |arg_description, i|
-      if arg_description[:type] == "DOMString"
-        args.push(InternalBindings.get_arg_string(i))
-        next
-      end
+    arg_count = InternalBindings.get_arg_count
 
-      if arg_description[:type] == "DOMHighResTimeStamp"
-        args.push(InternalBindings.get_arg_number(i))
-        next
-      end
-
-      _js_class = InternalBindings.get_arg_class_name(i)
-      _js_class = nil if _js_class == ""
-
-      _class = JS.const_get(_js_class || arg_description[:type])
-
-      if _class
-        arg_reference = InternalBindings.get_arg_reference(i)
-
-        if arg_reference
-          args.push(_class.new(arg_reference))
-        else
-          args.push(nil)
-        end
-      end
+    arg_count.times.with_index do |i|
+      args << JS::Value.new(reference: InternalBindings.get_arg_reference(i))
     end
 
     callable = descriptor_and_callable[:callable]
@@ -430,113 +409,99 @@ class Prism::ExternalReferences
   end
 
   def self.cleanup_reference(reference)
-    puts "Delete reference -> #{reference}"
     @@references.delete(reference)
-  end
-end
-
-module Prism::BindingHelpers
-  def self.included(base)
-    base.extend ClassMethods
-  end
-
-  module ClassMethods
-    private def bind_attr_reader(name, options)
-      self.define_method(name) do |*args|
-        begin
-          _class = JS.const_get(options[:return_type])
-        rescue NameError => e
-          _class = nil
-        end
-
-        if _class
-          reference = InternalBindings.get_value_reference(@js_value, name.to_s)
-
-          if reference == 0
-            nil
-          else
-            _class.new(reference)
-          end
-        else
-          InternalBindings.get_value_string(@js_value, name.to_s);
-        end
-      end
-    end
-
-    private def bind_attr_accessor(name, options)
-      bind_attr_reader(name, options)
-      # TODO - attr writer
-    end
-
-    private def bind_operation(name, options)
-      self.define_method(name) do |*args, &block|
-        InternalBindings.clear_args
-
-        args.push(block) if block
-
-        args.zip(options[:args]).each_with_index do |(arg, arg_description), i|
-          case arg_description[:type]
-          when "DOMString"
-            InternalBindings.set_arg_string(i, arg.to_s)
-          when "long"
-            InternalBindings.set_arg_number(i, arg.to_i)
-          else
-            _class = JS.const_get(arg_description[:type])
-
-            if _class && _class.is_a?(JS::CallbackInterface)
-              reference = Prism::ExternalReferences.get_reference({descriptor: _class, callable: arg})
-
-              InternalBindings.set_arg_callback(i, reference)
-            elsif _class && _class.is_a?(JS::TypeDef)
-              set = false
-              _class.types[:types].each do |type|
-                if type === "DOMString" && arg.is_a?(String)
-                  InternalBindings.set_arg_string(i, arg)
-                  set = true
-                  break
-                end
-
-                if type == "Function" && arg.respond_to?(:call)
-                  reference = Prism::ExternalReferences.get_reference({descriptor: JS::CallbackInterface.new("Function", args: []), callable: arg})
-
-                  InternalBindings.set_arg_callback(i, reference)
-                  set = true
-                  break
-                end
-              end
-
-              raise ArgumentError.new("Don't know how to handle arg type: #{_class} #{arg}") unless set
-            else
-              raise ArgumentError.new("Don't know how to handle arg type: #{arg_description[:type]}")
-            end
-          end
-        end
-
-        begin
-          _class = JS.const_get(options[:return_type])
-        rescue NameError => e
-          _class = nil
-        end
-
-        if _class
-          reference = InternalBindings.call_method_reference(@js_value, name.to_s)
-
-          if reference == 0
-            nil
-          else
-            _class.new(reference)
-          end
-        else
-          InternalBindings.call_method(@js_value, name.to_s);
-        end
-      end
-    end
   end
 end
 
 module JS
   CallbackInterface = Struct.new(:name, :options)
   TypeDef = Struct.new(:name, :types)
+
+  class Undefined
+  end
+
+  UNDEFINED = Undefined.new
+
+  class Value
+    def initialize(reference:)
+      @reference = reference
+    end
+
+    private
+
+    def translate_js_value(reference, type)
+      return nil if reference.nil?
+
+      case type
+      when "object"
+        JS::Value.new(reference: reference)
+      when "string"
+        InternalBindings.get_value_string(reference);
+      when "undefined"
+        JS::Undefined
+      else
+        JS::Value.new(reference: reference)
+      end
+    end
+
+    def call_function(reference, *args, &block)
+      InternalBindings.clear_args
+
+      args.each_with_index do |arg, index|
+        case arg
+        when String
+          InternalBindings.set_arg_string(index, arg)
+        else
+          if arg.respond_to?(:call)
+            arg_reference = Prism::ExternalReferences.get_reference({
+              callable: arg
+            })
+
+            InternalBindings.set_arg_callback(index, arg_reference)
+          else
+            InternalBindings.set_arg_number(index, arg)
+          end
+        end
+      end
+
+      if block
+        block_reference = Prism::ExternalReferences.get_reference({
+          callable: block
+        })
+
+        InternalBindings.set_arg_callback(args.length, block_reference)
+      end
+
+      result_reference = InternalBindings.call_method_reference(reference)
+
+      translate_js_value(result_reference, InternalBindings.get_type_of(result_reference))
+    end
+
+    def method_missing(name, *args, &block)
+      if name.to_s.end_with?("=")
+        value = args.first
+
+        case value
+        when String
+          InternalBindings.set_object_value_string(@reference, name.to_s[0...-1], value)
+        else
+          fail "have yet to implement setting with values of type #{value}"
+        end
+      end
+
+      reference = InternalBindings.get_value_reference(@reference, name.to_s)
+
+      return reference if reference.nil?
+
+      type = InternalBindings.get_type_of(reference)
+
+      if type == "function" then
+        call_function(reference, *args, &block)
+      else
+        translate_js_value(reference, type)
+      end
+    end
+  end
 
   module Global
     def self.included(base)
@@ -551,20 +516,12 @@ module JS
     end
 
     def self.window
-      @@window ||= JS::Window.new(InternalBindings.window_reference)
+      @@window ||= JS::Value.new(reference: InternalBindings.window_reference)
     end
 
     def self.document
-      @@document ||= JS::Document.new(InternalBindings.document_reference)
+      @@document ||= JS::Value.new(reference: InternalBindings.document_reference)
     end
-  end
-end
-
-class Prism::Binding
-  include Prism::BindingHelpers
-
-  def initialize(js_value)
-    @js_value = js_value
   end
 end
 

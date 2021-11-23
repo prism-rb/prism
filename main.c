@@ -86,6 +86,18 @@ set_arg_callback(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_object_value_string(mrb_state *mrb, mrb_value self) {
+  mrb_value index, name, value;
+  mrb_get_args(mrb, "iSS", &index, &name, &value);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));
+  }, index, RSTRING_PTR(name), RSTRING_PTR(value));
+
+  return mrb_nil_value();
+}
+
+mrb_value
 call_method(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
   mrb_get_args(mrb, "iS", &reference, &name);
@@ -100,15 +112,15 @@ call_method(mrb_state *mrb, mrb_value self) {
 mrb_value
 call_method_reference(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
-  mrb_get_args(mrb, "iS", &reference, &name);
+  mrb_get_args(mrb, "i", &reference);
 
   return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
-    return Prism.callMethodReturningReference($0, UTF8ToString($1));
-  }, reference, RSTRING_PTR(name)));
+    return Prism.callMethodReturningReference($0);
+  }, reference));
 }
 
-EM_JS(char*, get_value_string_, (mrb_value reference, const char* name), {
-  var string = Prism.getValueString(reference, UTF8ToString(name));
+EM_JS(char*, get_value_string_, (mrb_value reference), {
+  var string = Prism.getValueString(reference);
   var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
   var stringOnWasmHeap = _malloc(lengthBytes);
 
@@ -120,9 +132,9 @@ EM_JS(char*, get_value_string_, (mrb_value reference, const char* name), {
 mrb_value
 get_value_string(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
-  mrb_get_args(mrb, "iS", &reference, &name);
+  mrb_get_args(mrb, "i", &reference);
 
-  char* value = get_value_string_(reference, RSTRING_PTR(name));
+  char* value = get_value_string_(reference);
   mrb_value return_str = mrb_str_new_cstr(mrb, value);
 
   free(value);
@@ -138,6 +150,29 @@ get_value_reference(mrb_state *mrb, mrb_value self) {
   return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
     return Prism.getValueReference($0, UTF8ToString($1));
   }, reference, RSTRING_PTR(name)));
+}
+
+mrb_value
+get_type_of(mrb_state *mrb, mrb_value self) {
+  mrb_value reference, name;
+  mrb_get_args(mrb, "i", &reference);
+
+  int value = MAIN_THREAD_EM_ASM_INT({
+    var string = Prism.getTypeOf($0, UTF8ToString($1));
+    var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
+    var stringOnWasmHeap = _malloc(lengthBytes);
+
+    stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes);
+
+    return stringOnWasmHeap;
+
+  }, reference);
+
+  mrb_value return_str = mrb_str_new_cstr(mrb, value);
+
+  free(value);
+
+  return return_str;
 }
 
 EM_JS(char*, get_arg_string_, (mrb_value index), {
@@ -162,6 +197,14 @@ get_arg_string(mrb_state *mrb, mrb_value self) {
 
   return return_str;
 }
+
+mrb_value
+get_arg_count(mrb_state *mrb, mrb_value self) {
+  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.getArgCount();
+  }));
+}
+
 
 mrb_value
 get_arg_number(mrb_state *mrb, mrb_value self) {
@@ -304,7 +347,7 @@ main(int argc, const char * argv[])
     binding_class,
     "call_method_reference",
     call_method_reference,
-    MRB_ARGS_REQ(2)
+    MRB_ARGS_REQ(1)
   );
 
   mrb_define_class_method(
@@ -312,7 +355,7 @@ main(int argc, const char * argv[])
     binding_class,
     "get_value_string",
     get_value_string,
-    MRB_ARGS_REQ(2)
+    MRB_ARGS_REQ(1)
   );
 
   mrb_define_class_method(
@@ -322,6 +365,15 @@ main(int argc, const char * argv[])
     get_value_reference,
     MRB_ARGS_REQ(2)
   );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_arg_count",
+    get_arg_count,
+    MRB_ARGS_REQ(0)
+  );
+
 
   mrb_define_class_method(
     mrb,
@@ -374,7 +426,6 @@ main(int argc, const char * argv[])
     MRB_ARGS_REQ(2)
   );
 
-
   mrb_define_class_method(
     mrb,
     binding_class,
@@ -388,6 +439,22 @@ main(int argc, const char * argv[])
     binding_class,
     "set_arg_callback",
     set_arg_callback,
+    MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "set_object_value_string",
+    set_object_value_string,
+    MRB_ARGS_REQ(3)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_type_of",
+    get_type_of,
     MRB_ARGS_REQ(2)
   );
 
@@ -440,9 +507,6 @@ int load(char* main, char* config) {
   const char* class_name;
   mrb_define_global_const(mrb, "JSON_CONFIG", mrb_str_new_cstr(mrb, config));
   load_file("prism-ruby/prism.rb");
-  load_file("prism-ruby/bindings/bindings.0.rb");
-  load_file("prism-ruby/bindings/bindings.1.rb");
-  load_file("prism-ruby/bindings/bindings.2.rb");
   app = load_file(main);
   struct RClass* prism_module = mrb_module_get(mrb, "Prism");
   struct RClass* mount_class = mrb_class_get_under(mrb, prism_module, "Mount");
