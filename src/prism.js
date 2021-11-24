@@ -180,6 +180,10 @@ function getReference(obj) {
   return refId;
 }
 
+function freeReference(refId) {
+  references.delete(refId);
+}
+
 function getWindowReference() {
   return getReference(window);
 }
@@ -326,6 +330,7 @@ window.Prism = {
   setArgNumber,
   setArgCallback,
   setObjectValue,
+  freeReference,
   clearArgs,
   getValueReference,
   getValueString,

@@ -3,6 +3,8 @@
 #include <emscripten.h>
 #include <mruby.h>
 #include <mruby/irep.h>
+#include <mruby/class.h>
+#include <mruby/data.h>
 #include <mruby/array.h>
 #include <mruby/proc.h>
 #include <mruby/compile.h>
@@ -14,15 +16,46 @@
 
 mrb_value app;
 struct RClass* external_references;
+struct RClass* js_reference_class;
 mrb_state *mrb;
 mrbc_context *c;
 
-mrb_value mrb_reference(mrb_state *mrb, int maybe_int) {
-  if (maybe_int == 0) {
-    return mrb_nil_value();
-  }
+static void mrb_reference_free(mrb_state *mrb, int *p) {
+  MAIN_THREAD_EM_ASM_INT({
+    return Prism.freeReference($0);
+  }, *p);
+}
 
-  return mrb_int_value(mrb, maybe_int);
+static const struct mrb_data_type mrb_reference_type = {
+  "$i_mrb_reference_type", mrb_reference_free
+};
+
+
+mrb_value mrb_reference(mrb_state *mrb, int maybe_int) {
+  mrb_value inner_value;
+
+  mrb_value args[1] = { mrb_fixnum_value(maybe_int) };
+
+  inner_value = mrb_obj_new(mrb, js_reference_class, 1, args);
+
+  return inner_value;
+}
+
+static mrb_value mrb_reference_initialize(mrb_state *mrb, mrb_value self) {
+  mrb_int *data = (mrb_int*)DATA_PTR(self);
+  if (data) mrb_reference_free(mrb, data);
+  mrb_data_init(self, NULL, &mrb_reference_type);
+  mrb_int val;
+  mrb_get_args(mrb, "i", &val);
+  data = (mrb_int*)mrb_malloc(mrb, sizeof *data);
+  *data = val;
+  mrb_data_init(self, data, &mrb_reference_type);
+  return self;
+}
+
+static mrb_value mrb_reference_value(mrb_state *mrb, mrb_value self) {
+  mrb_int *data = (mrb_int*)DATA_PTR(self);
+  return mrb_fixnum_value(*data);
 }
 
 mrb_value
@@ -316,6 +349,12 @@ main(int argc, const char * argv[])
 
   mrb = mrb_open();
   c = mrbc_context_new(mrb);
+
+  js_reference_class = mrb_define_class(mrb, "JSReference", mrb->object_class);
+  MRB_SET_INSTANCE_TT(js_reference_class, MRB_TT_DATA);
+  mrb_define_method(mrb, js_reference_class, "initialize", mrb_reference_initialize, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, js_reference_class, "value", mrb_reference_value, MRB_ARGS_REQ(0));
+  mrb_define_method(mrb, js_reference_class, "to_i", mrb_reference_value, MRB_ARGS_REQ(0));
 
   binding_class = mrb_define_class(mrb, "InternalBindings", mrb->object_class);
   mrb_define_class_method(

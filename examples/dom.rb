@@ -7,8 +7,6 @@ class DOMExample < Prism::Component
     window.setTimeout(-> { puts "timeout fired!" }, 1000)
 
     document.body.style.background = "red"
-
-    puts window.location.href
   end
 
   def alert

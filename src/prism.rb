@@ -413,6 +413,12 @@ class Prism::ExternalReferences
   end
 end
 
+class JSReference
+  def nil?
+    value == 0
+  end
+end
+
 module JS
   CallbackInterface = Struct.new(:name, :options)
   TypeDef = Struct.new(:name, :types)
@@ -436,7 +442,7 @@ module JS
       when "object"
         JS::Value.new(reference: reference)
       when "string"
-        InternalBindings.get_value_string(reference);
+        InternalBindings.get_value_string(reference.value)
       when "undefined"
         JS::Undefined
       else
@@ -472,7 +478,7 @@ module JS
         InternalBindings.set_arg_callback(args.length, block_reference)
       end
 
-      result_reference = InternalBindings.call_method_reference(reference)
+      result_reference = InternalBindings.call_method_reference(reference.value)
 
       translate_js_value(result_reference, InternalBindings.get_type_of(result_reference))
     end
@@ -483,17 +489,17 @@ module JS
 
         case value
         when String
-          InternalBindings.set_object_value_string(@reference, name.to_s[0...-1], value)
+          InternalBindings.set_object_value_string(@reference.value, name.to_s[0...-1], value)
         else
           fail "have yet to implement setting with values of type #{value}"
         end
       end
 
-      reference = InternalBindings.get_value_reference(@reference, name.to_s)
+      reference = InternalBindings.get_value_reference(@reference.value, name.to_s)
 
-      return reference if reference.nil?
+      return nil if reference.nil?
 
-      type = InternalBindings.get_type_of(reference)
+      type = InternalBindings.get_type_of(reference.value)
 
       if type == "function" then
         call_function(reference, *args, &block)
