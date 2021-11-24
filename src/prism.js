@@ -156,6 +156,17 @@ function setArgCallback(index, reference) {
   registry.register(callbackHandler, reference);
 }
 
+function setArgValue(index, reference) {
+  const referenceValue = references.get(reference);
+
+  try {
+    args[index] = referenceValue;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
 function setObjectValue(reference, name, value) {
   const referenceValue = references.get(reference);
 
@@ -211,15 +222,18 @@ function callMethod(reference, methodName) {
   }
 }
 
-function callMethodReturningReference(reference) {
+function callMethodReturningReference(thisReference, reference) {
+  const thisValue = references.get(thisReference);
   const value = references.get(reference);
 
   try {
-    if (!value) {
-      throw new Error(`Attempted to call invalid reference: ${reference}, ${value}`);
+    if (!value || !thisValue) {
+      throw new Error(`Attempted to call invalid reference: ${thisReference}, ${reference}, ${value}`);
     }
 
-    return getReference(value(...args));
+    const result = value.apply(thisValue, args);
+
+    return getReference(result);
   } catch (e) {
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
@@ -237,6 +251,18 @@ function getValueString(reference) {
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
   }
 }
+
+function getValueNumber(reference) {
+  const value = references.get(reference);
+
+  try {
+    return Number(value);
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
 
 function getValueReference(reference, property) {
   const value = references.get(reference);
@@ -329,11 +355,13 @@ window.Prism = {
   setArgString,
   setArgNumber,
   setArgCallback,
+  setArgValue,
   setObjectValue,
   freeReference,
   clearArgs,
   getValueReference,
   getValueString,
+  getValueNumber,
   callMethod,
   callMethodReturningReference,
   render,

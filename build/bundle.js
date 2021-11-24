@@ -561,8 +561,8 @@ var wasmMemory;
 // In the wasm backend, we polyfill the WebAssembly object,
 // so this creates a (non-native-wasm) table for us.
 var wasmTable = new WebAssembly.Table({
-  'initial': 734,
-  'maximum': 734 + 0,
+  'initial': 737,
+  'maximum': 737 + 0,
   'element': 'anyfunc'
 });
 
@@ -1161,11 +1161,11 @@ function updateGlobalBufferAndViews(buf) {
 }
 
 var STATIC_BASE = 1024,
-    STACK_BASE = 5471120,
+    STACK_BASE = 5471328,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 228240,
-    DYNAMIC_BASE = 5471120,
-    DYNAMICTOP_PTR = 228080;
+    STACK_MAX = 228448,
+    DYNAMIC_BASE = 5471328,
+    DYNAMICTOP_PTR = 228288;
 
 
 
@@ -1579,10 +1579,13 @@ var ASM_CONSTS = [function() {return Prism.getWindowReference();},
  function() {return Prism.clearArgs();},
  function($0, $1) {return Prism.setArgString($0, UTF8ToString($1));},
  function($0, $1) {return Prism.setArgNumber($0, $1);},
+ function($0, $1) {return Prism.setArgValue($0, $1);},
  function($0, $1) {return Prism.setArgCallback($0, $1);},
  function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},
+ function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},
  function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},
- function($0) {return Prism.callMethodReturningReference($0);},
+ function($0, $1) {return Prism.callMethodReturningReference($0, $1);},
+ function($0) {return Prism.getValueNumber($0);},
  function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},
  function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},
  function() {return Prism.getArgCount();},
@@ -1617,13 +1620,18 @@ function readAsmConstArgs(sigPtr, buf) {
 function _emscripten_asm_const_sync_on_main_thread_iii(code, sigPtr, argbuf) {
   var args = readAsmConstArgs(sigPtr, argbuf);
   return ASM_CONSTS[code].apply(null, args);
+}
+
+function _emscripten_asm_const_sync_on_main_thread_dii(code, sigPtr, argbuf) {
+  var args = readAsmConstArgs(sigPtr, argbuf);
+  return ASM_CONSTS[code].apply(null, args);
 }function get_value_string_(reference){ var string = Prism.getValueString(reference); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
 function get_arg_string_(index){ var string = Prism.getArgString(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
 function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
 
 
 
-// STATICTOP = STATIC_BASE + 227216;
+// STATICTOP = STATIC_BASE + 227424;
 /* global initializers */  __ATINIT__.push({ func: function() { ___wasm_call_ctors() } });
 
 
@@ -5797,7 +5805,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
     }
 
   function _emscripten_get_sbrk_ptr() {
-      return 228080;
+      return 228288;
     }
 
   
@@ -6318,7 +6326,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
   function _getpwnam() { throw 'getpwnam: TODO' }
 
   
-  var ___tm_timezone=(stringToUTF8("GMT", 228144, 4), 228144);function _gmtime_r(time, tmPtr) {
+  var ___tm_timezone=(stringToUTF8("GMT", 228352, 4), 228352);function _gmtime_r(time, tmPtr) {
       var date = new Date(HEAP32[((time)>>2)]*1000);
       HEAP32[((tmPtr)>>2)]=date.getUTCSeconds();
       HEAP32[(((tmPtr)+(4))>>2)]=date.getUTCMinutes();
@@ -7030,7 +7038,7 @@ function intArrayToString(array) {
 // ASM_LIBRARY EXTERN PRIMITIVES: Int8Array,Int32Array,Math_floor,Math_ceil
 
 var asmGlobalArg = {};
-var asmLibraryArg = { "__lock": ___lock, "__syscall10": ___syscall10, "__syscall102": ___syscall102, "__syscall122": ___syscall122, "__syscall142": ___syscall142, "__syscall15": ___syscall15, "__syscall180": ___syscall180, "__syscall181": ___syscall181, "__syscall183": ___syscall183, "__syscall194": ___syscall194, "__syscall195": ___syscall195, "__syscall196": ___syscall196, "__syscall197": ___syscall197, "__syscall221": ___syscall221, "__syscall3": ___syscall3, "__syscall38": ___syscall38, "__syscall4": ___syscall4, "__syscall41": ___syscall41, "__syscall42": ___syscall42, "__syscall5": ___syscall5, "__syscall54": ___syscall54, "__syscall60": ___syscall60, "__syscall63": ___syscall63, "__syscall83": ___syscall83, "__syscall85": ___syscall85, "__unlock": ___unlock, "abort": _abort, "emscripten_asm_const_sync_on_main_thread_iii": _emscripten_asm_const_sync_on_main_thread_iii, "emscripten_get_sbrk_ptr": _emscripten_get_sbrk_ptr, "emscripten_longjmp": _emscripten_longjmp, "emscripten_memcpy_big": _emscripten_memcpy_big, "emscripten_resize_heap": _emscripten_resize_heap, "environ_get": _environ_get, "environ_sizes_get": _environ_sizes_get, "execl": _execl, "exit": _exit, "fd_close": _fd_close, "fd_fdstat_get": _fd_fdstat_get, "fd_read": _fd_read, "fd_seek": _fd_seek, "fd_write": _fd_write, "flock": _flock, "fork": _fork, "gai_strerror": _gai_strerror, "getTempRet0": _getTempRet0, "get_arg_class_name_": get_arg_class_name_, "get_arg_string_": get_arg_string_, "get_value_string_": get_value_string_, "getaddrinfo": _getaddrinfo, "getnameinfo": _getnameinfo, "getpwnam": _getpwnam, "gmtime_r": _gmtime_r, "invoke_didd": invoke_didd, "invoke_ii": invoke_ii, "invoke_iid": invoke_iid, "invoke_iii": invoke_iii, "invoke_iiii": invoke_iiii, "invoke_iiiii": invoke_iiiii, "invoke_iiiiiii": invoke_iiiiiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_v": invoke_v, "invoke_vi": invoke_vi, "invoke_vii": invoke_vii, "invoke_viii": invoke_viii, "invoke_viiii": invoke_viiii, "localtime_r": _localtime_r, "memory": wasmMemory, "mktime": _mktime, "round": _round, "saveSetjmp": _saveSetjmp, "setTempRet0": _setTempRet0, "strftime": _strftime, "table": wasmTable, "testSetjmp": _testSetjmp, "time": _time, "timespec_get": _timespec_get, "waitpid": _waitpid };
+var asmLibraryArg = { "__lock": ___lock, "__syscall10": ___syscall10, "__syscall102": ___syscall102, "__syscall122": ___syscall122, "__syscall142": ___syscall142, "__syscall15": ___syscall15, "__syscall180": ___syscall180, "__syscall181": ___syscall181, "__syscall183": ___syscall183, "__syscall194": ___syscall194, "__syscall195": ___syscall195, "__syscall196": ___syscall196, "__syscall197": ___syscall197, "__syscall221": ___syscall221, "__syscall3": ___syscall3, "__syscall38": ___syscall38, "__syscall4": ___syscall4, "__syscall41": ___syscall41, "__syscall42": ___syscall42, "__syscall5": ___syscall5, "__syscall54": ___syscall54, "__syscall60": ___syscall60, "__syscall63": ___syscall63, "__syscall83": ___syscall83, "__syscall85": ___syscall85, "__unlock": ___unlock, "abort": _abort, "emscripten_asm_const_sync_on_main_thread_dii": _emscripten_asm_const_sync_on_main_thread_dii, "emscripten_asm_const_sync_on_main_thread_iii": _emscripten_asm_const_sync_on_main_thread_iii, "emscripten_get_sbrk_ptr": _emscripten_get_sbrk_ptr, "emscripten_longjmp": _emscripten_longjmp, "emscripten_memcpy_big": _emscripten_memcpy_big, "emscripten_resize_heap": _emscripten_resize_heap, "environ_get": _environ_get, "environ_sizes_get": _environ_sizes_get, "execl": _execl, "exit": _exit, "fd_close": _fd_close, "fd_fdstat_get": _fd_fdstat_get, "fd_read": _fd_read, "fd_seek": _fd_seek, "fd_write": _fd_write, "flock": _flock, "fork": _fork, "gai_strerror": _gai_strerror, "getTempRet0": _getTempRet0, "get_arg_class_name_": get_arg_class_name_, "get_arg_string_": get_arg_string_, "get_value_string_": get_value_string_, "getaddrinfo": _getaddrinfo, "getnameinfo": _getnameinfo, "getpwnam": _getpwnam, "gmtime_r": _gmtime_r, "invoke_didd": invoke_didd, "invoke_ii": invoke_ii, "invoke_iid": invoke_iid, "invoke_iii": invoke_iii, "invoke_iiii": invoke_iiii, "invoke_iiiii": invoke_iiiii, "invoke_iiiiiii": invoke_iiiiiii, "invoke_iiiiiiii": invoke_iiiiiiii, "invoke_v": invoke_v, "invoke_vi": invoke_vi, "invoke_vii": invoke_vii, "invoke_viii": invoke_viii, "invoke_viiii": invoke_viiii, "localtime_r": _localtime_r, "memory": wasmMemory, "mktime": _mktime, "round": _round, "saveSetjmp": _saveSetjmp, "setTempRet0": _setTempRet0, "strftime": _strftime, "table": wasmTable, "testSetjmp": _testSetjmp, "time": _time, "timespec_get": _timespec_get, "waitpid": _waitpid };
 var asm = createWasm();
 Module["asm"] = asm;
 var ___wasm_call_ctors = Module["___wasm_call_ctors"] = function() {

@@ -3,6 +3,7 @@
 #include <emscripten.h>
 #include <mruby.h>
 #include <mruby/irep.h>
+#include <mruby/numeric.h>
 #include <mruby/class.h>
 #include <mruby/data.h>
 #include <mruby/array.h>
@@ -107,6 +108,18 @@ set_arg_number(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_arg_value(mrb_state *mrb, mrb_value self) {
+  mrb_value index, reference;
+  mrb_get_args(mrb, "ii", &index, &reference);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setArgValue($0, $1);
+  }, index, reference);
+
+  return mrb_nil_value();
+}
+
+mrb_value
 set_arg_callback(mrb_state *mrb, mrb_value self) {
   mrb_value index, reference;
   mrb_get_args(mrb, "ii", &index, &reference);
@@ -131,6 +144,19 @@ set_object_value_string(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_object_value_number(mrb_state *mrb, mrb_value self) {
+  mrb_value index, name;
+  mrb_float value;
+  mrb_get_args(mrb, "iSf", &index, &name, &value);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setObjectValue($0, UTF8ToString($1), $2);
+  }, index, RSTRING_PTR(name), value);
+
+  return mrb_nil_value();
+}
+
+mrb_value
 call_method(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
   mrb_get_args(mrb, "iS", &reference, &name);
@@ -144,12 +170,12 @@ call_method(mrb_state *mrb, mrb_value self) {
 
 mrb_value
 call_method_reference(mrb_state *mrb, mrb_value self) {
-  mrb_value reference, name;
-  mrb_get_args(mrb, "i", &reference);
+  mrb_value this_reference, reference;
+  mrb_get_args(mrb, "ii", &this_reference, &reference);
 
-  return mrb_int_value(mrb, MAIN_THREAD_EM_ASM_INT({
-    return Prism.callMethodReturningReference($0);
-  }, reference));
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.callMethodReturningReference($0, $1);
+  }, this_reference, reference));
 }
 
 EM_JS(char*, get_value_string_, (mrb_value reference), {
@@ -164,7 +190,7 @@ EM_JS(char*, get_value_string_, (mrb_value reference), {
 
 mrb_value
 get_value_string(mrb_state *mrb, mrb_value self) {
-  mrb_value reference, name;
+  mrb_value reference;
   mrb_get_args(mrb, "i", &reference);
 
   char* value = get_value_string_(reference);
@@ -173,6 +199,16 @@ get_value_string(mrb_state *mrb, mrb_value self) {
   free(value);
 
   return return_str;
+}
+
+mrb_value
+get_value_number(mrb_state *mrb, mrb_value self) {
+  mrb_value reference;
+  mrb_get_args(mrb, "i", &reference);
+
+  return mrb_float_value(mrb, MAIN_THREAD_EM_ASM_DOUBLE({
+    return Prism.getValueNumber($0);
+  }, reference));
 }
 
 mrb_value
@@ -386,7 +422,7 @@ main(int argc, const char * argv[])
     binding_class,
     "call_method_reference",
     call_method_reference,
-    MRB_ARGS_REQ(1)
+    MRB_ARGS_REQ(2)
   );
 
   mrb_define_class_method(
@@ -394,6 +430,14 @@ main(int argc, const char * argv[])
     binding_class,
     "get_value_string",
     get_value_string,
+    MRB_ARGS_REQ(1)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_value_number",
+    get_value_number,
     MRB_ARGS_REQ(1)
   );
 
@@ -476,6 +520,14 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "set_arg_value",
+    set_arg_value,
+    MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "set_arg_callback",
     set_arg_callback,
     MRB_ARGS_REQ(2)
@@ -486,6 +538,14 @@ main(int argc, const char * argv[])
     binding_class,
     "set_object_value_string",
     set_object_value_string,
+    MRB_ARGS_REQ(3)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "set_object_value_number",
+    set_object_value_number,
     MRB_ARGS_REQ(3)
   );
 

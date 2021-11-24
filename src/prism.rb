@@ -400,7 +400,9 @@ class Prism::ExternalReferences
     arg_count = InternalBindings.get_arg_count
 
     arg_count.times.with_index do |i|
-      args << JS::Value.new(reference: InternalBindings.get_arg_reference(i))
+      ref = InternalBindings.get_arg_reference(i)
+      type = InternalBindings.get_type_of(ref.value)
+      args << JS::Value.translate_js_value(ref, type)
     end
 
     callable = descriptor_and_callable[:callable]
@@ -430,17 +432,24 @@ module JS
 
   class Value
     def initialize(reference:)
+      fail "bad reference #{reference}" unless reference.is_a?(JSReference)
       @reference = reference
+    end
+
+    def _reference
+      @reference
     end
 
     private
 
-    def translate_js_value(reference, type)
+    def self.translate_js_value(reference, type)
       return nil if reference.nil?
 
       case type
       when "object"
         JS::Value.new(reference: reference)
+      when "number"
+        InternalBindings.get_value_number(reference.value)
       when "string"
         InternalBindings.get_value_string(reference.value)
       when "undefined"
@@ -457,6 +466,8 @@ module JS
         case arg
         when String
           InternalBindings.set_arg_string(index, arg)
+        when JS::Value
+          InternalBindings.set_arg_value(index, arg._reference.value)
         else
           if arg.respond_to?(:call)
             arg_reference = Prism::ExternalReferences.get_reference({
@@ -478,9 +489,9 @@ module JS
         InternalBindings.set_arg_callback(args.length, block_reference)
       end
 
-      result_reference = InternalBindings.call_method_reference(reference.value)
+      result_reference = InternalBindings.call_method_reference(@reference.value, reference.value)
 
-      translate_js_value(result_reference, InternalBindings.get_type_of(result_reference))
+      self.class.translate_js_value(result_reference, InternalBindings.get_type_of(result_reference.value))
     end
 
     def method_missing(name, *args, &block)
@@ -490,6 +501,8 @@ module JS
         case value
         when String
           InternalBindings.set_object_value_string(@reference.value, name.to_s[0...-1], value)
+        when Numeric
+          InternalBindings.set_object_value_number(@reference.value, name.to_s[0...-1], value)
         else
           fail "have yet to implement setting with values of type #{value}"
         end
@@ -504,7 +517,7 @@ module JS
       if type == "function" then
         call_function(reference, *args, &block)
       else
-        translate_js_value(reference, type)
+        self.class.translate_js_value(reference, type)
       end
     end
   end
