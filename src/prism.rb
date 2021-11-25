@@ -494,18 +494,26 @@ module JS
       self.class.translate_js_value(result_reference, InternalBindings.get_type_of(result_reference.value))
     end
 
+    def call_setter(name, value)
+      case value
+      when String
+        InternalBindings.set_object_value_string(@reference.value, name, value)
+      when Numeric
+        InternalBindings.set_object_value_number(@reference.value, name, value)
+      when JS::Value
+        InternalBindings.set_object_value(@reference.value, name, value._reference.value)
+      else
+        fail "have yet to implement setting with values of type #{value}"
+      end
+    end
+
     def method_missing(name, *args, &block)
-      if name.to_s.end_with?("=")
+      if name.to_s.end_with?("=") && args.length > 0
         value = args.first
 
-        case value
-        when String
-          InternalBindings.set_object_value_string(@reference.value, name.to_s[0...-1], value)
-        when Numeric
-          InternalBindings.set_object_value_number(@reference.value, name.to_s[0...-1], value)
-        else
-          fail "have yet to implement setting with values of type #{value}"
-        end
+        call_setter(name.to_s[0...-1], value)
+
+        return value
       end
 
       reference = InternalBindings.get_value_reference(@reference.value, name.to_s)
@@ -515,7 +523,13 @@ module JS
       type = InternalBindings.get_type_of(reference.value)
 
       if type == "function" then
-        call_function(reference, *args, &block)
+        is_constructor = InternalBindings.is_function_constructor(reference.value)
+
+        if is_constructor
+          JS::Value.new(reference: reference)
+        else
+          call_function(reference, *args, &block)
+        end
       else
         self.class.translate_js_value(reference, type)
       end

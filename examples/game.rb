@@ -12,11 +12,12 @@ class CanvasExample < Prism::Component
 
     document.body.style.padding = '0';
     document.body.style.margin = '0';
-
     document.body.appendChild(@canvas)
 
     @x = 10
     @y = 10
+    @x_speed = 0
+    @y_speed = 0
 
     resize_canvas
     track_keyboard_events
@@ -33,10 +34,18 @@ class CanvasExample < Prism::Component
   def track_keyboard_events
     document.body.addEventListener('keydown') do |event|
       @keys[event.code] = true
+      keydown(event.code)
     end
 
     document.body.addEventListener('keyup') do |event|
       @keys[event.code] = false
+    end
+  end
+
+  def keydown(key_code)
+    case key_code
+    when "KeyW"
+      @y_speed -= 10
     end
   end
 
@@ -57,9 +66,9 @@ class CanvasExample < Prism::Component
   end
 
   def speed
-    return 3 * @delta if @keys["ShiftLeft"]
+    return 1 * @delta if @keys["ShiftLeft"]
 
-    2 * @delta
+    0.5 * @delta
   end
 
   def update(new_time_elapsed)
@@ -73,17 +82,18 @@ class CanvasExample < Prism::Component
   end
 
   def step
-    @x += speed if moving_right?
-    @x -= speed if moving_left?
-    @y -= speed if moving_up?
-    @y += speed if moving_down?
+    @x_speed += speed if moving_right?
+    @x_speed -= speed if moving_left?
+
+    @y_speed += 9.81 / 60 * @delta
+
+    @x += @x_speed
+    @y += @y_speed
   end
 
   def draw
     @context.fillStyle = 'white'
     @context.fillRect(0, 0, @canvas.width, @canvas.height)
-
-    @context.clear
 
     @context.fillStyle = 'red'
     @context.fillRect(@x, @y, 20, 20)

@@ -1028,6 +1028,18 @@ function setObjectValue(reference, name, value) {
   }
 }
 
+function setObjectValueFromReference(reference, name, valueReference) {
+  const obj = references.get(reference);
+  const value = references.get(valueReference);
+
+  try {
+    obj[name] = value;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
 
 function getReference(obj) {
   if (obj == null) {
@@ -1142,6 +1154,17 @@ function getTypeOf(reference) {
   }
 }
 
+function checkIfFunctionIsContructor(reference) {
+  const value = references.get(reference);
+
+  try {
+    return value.prototype && 'constructor' in value.prototype;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
 function getArgCount() {
   try {
     return callbackArgs.length;
@@ -1207,6 +1230,7 @@ window.Prism = {
   setArgCallback,
   setArgValue,
   setObjectValue,
+  setObjectValueFromReference,
   freeReference,
   clearArgs,
   getValueReference,
@@ -1223,7 +1247,8 @@ window.Prism = {
   getArgNumber,
   getArgReference,
   getArgClassName,
-  getTypeOf
+  getTypeOf,
+  checkIfFunctionIsContructor
 };
 
 function render() {

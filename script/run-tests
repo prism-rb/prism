@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+
+require 'ferrum'
+require 'byebug'
+
+
+class TestRunner
+  attr_accessor :browser, :server
+
+  def initialize
+    @browser = Ferrum::Browser.new(js_errors: true, logger: self, headless: true)
+    @server = IO.popen("bin/prism server 6060")
+  end
+
+  def run_tests
+    until browser.network.status == 200
+      browser.go_to 'http://localhost:6060/tests/js_bindings_test.rb'
+
+      sleep 0.1 if browser.network.status.nil?
+    end
+  end
+
+  def puts(line)
+    if line.strip.start_with?("◀")
+      sym, time, json = line.split(' ', 3)
+
+      j = JSON.parse(json)
+
+      if (j["method"] == "Runtime.consoleAPICalled")
+        log_line = j["params"]["args"].first["value"]
+
+        super log_line
+
+        if log_line.start_with?("Exit code:")
+          code = log_line.split(":").last
+
+          shut_down
+          Process.exit(code.to_i)
+        end
+      end
+    end
+  end
+
+  def shut_down
+    wasm_servers = `lsof -i TCP:6060`.lines.last.split(' ')[1]
+
+    Process.kill('TERM', @server.pid)
+    Process.kill('TERM', wasm_servers.to_i)
+    @browser.quit
+  end
+end
+
+test_runner = TestRunner.new
+
+Signal.trap("INT") {
+  test_runner.shut_down
+  exit
+}
+
+# Trap `Kill `
+Signal.trap("TERM") {
+  test_runner.shut_down
+  exit
+}
+
+test_runner.run_tests
+
+loop do
+  sleep 0.1
+end

@@ -1,4 +1,7 @@
-default: build/prism.js build/bundle.js
+default: build/prism.js build/bundle.js test
+
+test: ./script/run-tests tests/js_bindings_test.rb
+	./script/run-tests
 
 build/prism.js: src/prism.js
 	npx browserify src/prism.js -o build/prism.js

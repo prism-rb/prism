@@ -157,6 +157,18 @@ set_object_value_number(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_object_value(mrb_state *mrb, mrb_value self) {
+  mrb_value index, name, value;
+  mrb_get_args(mrb, "iSi", &index, &name, &value);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);
+  }, index, RSTRING_PTR(name), value);
+
+  return mrb_nil_value();
+}
+
+mrb_value
 call_method(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
   mrb_get_args(mrb, "iS", &reference, &name);
@@ -242,6 +254,20 @@ get_type_of(mrb_state *mrb, mrb_value self) {
   free(value);
 
   return return_str;
+}
+
+mrb_value
+is_function_constructor(mrb_state *mrb, mrb_value self) {
+  mrb_value reference;
+  mrb_get_args(mrb, "i", &reference);
+
+  int value;
+
+  value = MAIN_THREAD_EM_ASM_INT({
+    return Prism.checkIfFunctionIsContructor($0);
+  }, reference);
+
+  return mrb_bool_value(value);
 }
 
 EM_JS(char*, get_arg_string_, (mrb_value index), {
@@ -552,9 +578,25 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "set_object_value",
+    set_object_value,
+    MRB_ARGS_REQ(3)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "get_type_of",
     get_type_of,
-    MRB_ARGS_REQ(2)
+    MRB_ARGS_REQ(1)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "is_function_constructor",
+    is_function_constructor,
+    MRB_ARGS_REQ(1)
   );
 
   if (!mrb) { /* handle error */ }
