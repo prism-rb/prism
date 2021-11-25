@@ -381,6 +381,15 @@ class Prism::ExternalReferences
   @@reference_id = 0
   @@references = {}
 
+  def self.get_ruby_reference(value)
+    id = @@reference_id
+
+    @@references[id] = value
+
+    @@reference_id += 1
+
+    id
+  end
 
   def self.get_reference(descriptor_and_callable)
     id = @@reference_id
@@ -413,11 +422,21 @@ class Prism::ExternalReferences
   def self.cleanup_reference(reference)
     @@references.delete(reference)
   end
+
+  def self.deference(ruby_reference_id)
+    @@references[ruby_reference_id]
+  end
 end
 
 class JSReference
   def nil?
     value == 0
+  end
+end
+
+class RubyReference
+  def initialize(reference:)
+    @reference = reference
   end
 end
 
@@ -446,6 +465,9 @@ module JS
       return nil if reference.nil?
 
       case type
+      when "ruby_value"
+        ruby_reference_id = InternalBindings.get_ruby_reference_id(reference.value)
+        Prism::ExternalReferences.deference(ruby_reference_id)
       when "object"
         JS::Value.new(reference: reference)
       when "number"
@@ -491,7 +513,10 @@ module JS
 
       result_reference = InternalBindings.call_method_reference(@reference.value, reference.value)
 
-      self.class.translate_js_value(result_reference, InternalBindings.get_type_of(result_reference.value))
+      self.class.translate_js_value(
+        result_reference,
+        InternalBindings.get_type_of(result_reference.value)
+      )
     end
 
     def call_setter(name, value)
@@ -503,7 +528,9 @@ module JS
       when JS::Value
         InternalBindings.set_object_value(@reference.value, name, value._reference.value)
       else
-        fail "have yet to implement setting with values of type #{value}"
+        ruby_reference_id = Prism::ExternalReferences.get_ruby_reference(value)
+
+        InternalBindings.set_object_ruby_value(@reference.value, name, ruby_reference_id)
       end
     end
 
@@ -536,6 +563,12 @@ module JS
     end
   end
 
+  class Window < Value
+    def eval(*args, &block)
+      method_missing(:eval, *args, &block)
+    end
+  end
+
   module Global
     def self.included(base)
 
@@ -549,7 +582,7 @@ module JS
     end
 
     def self.window
-      @@window ||= JS::Value.new(reference: InternalBindings.window_reference)
+      @@window ||= JS::Window.new(reference: InternalBindings.window_reference)
     end
 
     def self.document

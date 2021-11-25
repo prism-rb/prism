@@ -27,7 +27,7 @@ class TestRunner
       j = JSON.parse(json)
 
       if (j["method"] == "Runtime.consoleAPICalled")
-        log_line = j["params"]["args"].first["value"]
+        log_line = j["params"]["args"].map { |a| a["value"] }.join(' ')
 
         super log_line
 

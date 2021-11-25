@@ -137,6 +137,9 @@ function setArgNumber(index, value) {
   args[index] = value;
 }
 
+
+const RUBY_VALUE = Symbol('RUBY_VALUE');
+
 let callbackArgs = [];
 
 const registry = new FinalizationRegistry(cleanupReference);
@@ -181,6 +184,24 @@ function setObjectValue(reference, name, value) {
 function setObjectValueFromReference(reference, name, valueReference) {
   const obj = references.get(reference);
   const value = references.get(valueReference);
+
+  try {
+    obj[name] = value;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+function makeRubyValue(rubyReferenceId) {
+  return { [RUBY_VALUE]: rubyReferenceId };
+}
+
+function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
+  const obj = references.get(reference);
+  const value = makeRubyValue(rubyReferenceId);
+
+  registry.register(value, rubyReferenceId);
 
   try {
     obj[name] = value;
@@ -297,7 +318,24 @@ function getTypeOf(reference) {
   const value = references.get(reference);
 
   try {
+    const type = typeof value;
+
+    if (type === "object" && RUBY_VALUE in value) {
+      return "ruby_value";
+    }
+
     return typeof value;
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
+
+function getRubyReferenceId(reference) {
+  const value = references.get(reference);
+
+  try {
+    return value[RUBY_VALUE];
   } catch (e) {
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
@@ -381,6 +419,7 @@ window.Prism = {
   setArgValue,
   setObjectValue,
   setObjectValueFromReference,
+  setObjectValueFromRubyReference,
   freeReference,
   clearArgs,
   getValueReference,
@@ -398,6 +437,7 @@ window.Prism = {
   getArgReference,
   getArgClassName,
   getTypeOf,
+  getRubyReferenceId,
   checkIfFunctionIsContructor
 };
 

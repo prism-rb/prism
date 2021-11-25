@@ -4,15 +4,9 @@ class JSBindingsTest < Prism::Component
   def initialize
     @results = []
 
-    tests
+    puts ""
 
-    @results.each do |result|
-      if result[:passed]
-        puts "Passed: #{result[:name]}"
-      else
-        puts "Failed: #{result[:name]}\n#{result[:error]}"
-      end
-    end
+    tests
 
     passes = @results.select { |result| result[:passed] }
     failures = @results.reject { |result| result[:passed] }
@@ -23,16 +17,30 @@ class JSBindingsTest < Prism::Component
 
   def run_test(name)
     begin
+      puts name
       yield
     rescue Exception => e
-      @results << {name: name, passed: false, error: e}
+      @results << result = {name: name, passed: false, error: e}
+      puts " ✖ Failed"
+      puts ""
+      puts result[:error].inspect
+      result[:error].backtrace.each do |line|
+        puts "  " + line
+      end
+      puts ""
     else
-      @results << {name: name, passed: true}
+      @results << result = {name: name, passed: true}
+      puts " ✔ Passed"
+      puts ""
     end
   end
 
   def assert(condition)
     fail "Assertion error" unless condition
+  end
+
+  def assert_eq(a, b)
+    fail "Assertion error: Expected #{a} to eq #{b}" unless a == b
   end
 
   def render
@@ -89,8 +97,18 @@ class JSBindingsTest < Prism::Component
       assert div1.el.prop == "hello"
     end
 
+    run_test "setting a property to a hash" do
+      div = document.createElement('div')
+
+      div.obj = {"a" => "hello"}
+
+      assert_eq(div.obj["a"], "hello")
+    end
+
     run_test "making a set" do
       set = window.Set.new
+
+      window.foo = Hash.new
     end
   end
 end

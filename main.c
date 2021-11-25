@@ -169,6 +169,18 @@ set_object_value(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_object_ruby_value(mrb_state *mrb, mrb_value self) {
+  mrb_value index, name, value;
+  mrb_get_args(mrb, "iSi", &index, &name, &value);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);
+  }, index, RSTRING_PTR(name), value);
+
+  return mrb_nil_value();
+}
+
+mrb_value
 call_method(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
   mrb_get_args(mrb, "iS", &reference, &name);
@@ -254,6 +266,18 @@ get_type_of(mrb_state *mrb, mrb_value self) {
   free(value);
 
   return return_str;
+}
+
+mrb_value
+get_ruby_reference_id(mrb_state *mrb, mrb_value self) {
+  mrb_value reference, name;
+  mrb_get_args(mrb, "i", &reference);
+
+  int value = MAIN_THREAD_EM_ASM_INT({
+    return Prism.getRubyReferenceId($0);
+  }, reference);
+
+  return mrb_fixnum_value(value);
 }
 
 mrb_value
@@ -586,8 +610,24 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "set_object_ruby_value",
+    set_object_ruby_value,
+    MRB_ARGS_REQ(3)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "get_type_of",
     get_type_of,
+    MRB_ARGS_REQ(1)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "get_ruby_reference_id",
+    get_ruby_reference_id,
     MRB_ARGS_REQ(1)
   );
 
