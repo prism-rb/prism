@@ -29,10 +29,6 @@ module Prism
     def event(eventJSON, id)
       DOM.event(JSON::parse(eventJSON), id)
     end
-
-    def http_response(responseJSON, id)
-      HTTP._response(HTTP::Response.from_json(responseJSON), id)
-    end
   end
 
   class Component
@@ -342,41 +338,6 @@ module DOM
   end
 end
 
-module HTTP
-  @@event_id = 0
-  @@listeners = {}
-
-  def self.get_event_id
-    @@event_id += 1
-
-    @@event_id.to_s
-  end
-
-  def self.add_listener(id, &block)
-    @@listeners[id] = block
-  end
-
-  def self.get(url, &block)
-    id = HTTP.get_event_id
-
-    InternalHTTP.http_request(url, id)
-
-    HTTP.add_listener(id, &block)
-  end
-
-  def self._response(text, id)
-    @@listeners[id].call(text)
-  end
-
-  class Response < Struct.new(:body)
-    def self.from_json(json)
-      data = JSON::parse(json)
-
-      new(data["body"])
-    end
-  end
-end
-
 class Prism::ExternalReferences
   @@reference_id = 0
   @@references = {}
@@ -417,12 +378,6 @@ class Prism::ExternalReferences
   end
 end
 
-class JSReference
-  def nil?
-    value == 0
-  end
-end
-
 class RubyReference
   def initialize(reference:)
     @reference = reference
@@ -439,8 +394,9 @@ module JS
     end
   end
 
-  class Constructor
-    def initialize(reference: reference)
+  class Value
+    def initialize(reference:)
+      fail "bad reference #{reference}" unless reference.is_a?(JSReference)
       @reference = reference
     end
 
@@ -451,13 +407,6 @@ module JS
 
       JS::Value.translate_js_value(reference, InternalBindings.get_type_of(reference.value))
     end
-  end
-
-  class Value
-    def initialize(reference:)
-      fail "bad reference #{reference}" unless reference.is_a?(JSReference)
-      @reference = reference
-    end
 
     def _reference
       @reference
@@ -466,7 +415,7 @@ module JS
     private
 
     def self.translate_js_value(reference, type)
-      return nil if reference.nil?
+      return nil if reference.value == 0
 
       case type
       when "ruby_value"
@@ -577,13 +526,13 @@ module JS
 
       reference = InternalBindings.get_value_reference(@reference.value, name.to_s)
 
-      return nil if reference.nil?
+      return nil if reference.value == 0
 
       type = InternalBindings.get_type_of(reference.value)
 
       if type == "function" then
         if is_constructor
-          JS::Constructor.new(reference: reference)
+          JS::Value.new(reference: reference)
         else
           call_function(reference, *args, &block)
         end

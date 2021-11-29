@@ -179,6 +179,12 @@ class JSBindingsTest < Prism::Component
       assert(set.has 5)
       assert!(set.has 6)
     end
+
+    run_test "calling a method that returns null" do
+      regexp = window.RegExp!.new("test")
+
+      assert_eq(regexp.exec('foo'), nil)
+    end
   end
 end
 

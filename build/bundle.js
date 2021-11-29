@@ -561,8 +561,8 @@ var wasmMemory;
 // In the wasm backend, we polyfill the WebAssembly object,
 // so this creates a (non-native-wasm) table for us.
 var wasmTable = new WebAssembly.Table({
-  'initial': 744,
-  'maximum': 744 + 0,
+  'initial': 743,
+  'maximum': 743 + 0,
   'element': 'anyfunc'
 });
 
@@ -1161,11 +1161,11 @@ function updateGlobalBufferAndViews(buf) {
 }
 
 var STATIC_BASE = 1024,
-    STACK_BASE = 5471856,
+    STACK_BASE = 5471584,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 228976,
-    DYNAMIC_BASE = 5471856,
-    DYNAMICTOP_PTR = 228816;
+    STACK_MAX = 228704,
+    DYNAMIC_BASE = 5471584,
+    DYNAMICTOP_PTR = 228544;
 
 
 
@@ -1599,7 +1599,6 @@ var ASM_CONSTS = [function() {return Prism.getWindowReference();},
  function($0) {return Prism.getArgNumber($0);},
  function($0) {return Prism.getArgReference($0);},
  function($0, $1, $2) {var selector = UTF8ToString($0); var eventName = UTF8ToString($1); var id = UTF8ToString($2); var elements; if (selector === 'document') { elements = [window.document]; } else if (selector === 'body') { elements = [window.document.body]; } else { elements = document.querySelectorAll(selector); } for (var i = 0; i < elements.length; i++) { var element = elements[i]; element.addEventListener(eventName, function(event) { Module.ccall( 'event', 'void', ['string', 'string', 'string'], [Prism.stringifyEvent(event), id] ); Prism.render(); }); };},
- function($0, $1) {const response = fetch(UTF8ToString($0)); const id = UTF8ToString($1); response.then(r => r.text()).then(text => { Module.ccall('http_response', 'void', ['string', 'string'], [JSON.stringify({body: text}), id] ); render(); });},
  function($0) {return Prism.freeReference($0);}];
 
 // Avoid creating a new array
@@ -1638,7 +1637,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
 
 
 
-// STATICTOP = STATIC_BASE + 227952;
+// STATICTOP = STATIC_BASE + 227680;
 /* global initializers */  __ATINIT__.push({ func: function() { ___wasm_call_ctors() } });
 
 
@@ -5812,7 +5811,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
     }
 
   function _emscripten_get_sbrk_ptr() {
-      return 228816;
+      return 228544;
     }
 
   
@@ -6333,7 +6332,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
   function _getpwnam() { throw 'getpwnam: TODO' }
 
   
-  var ___tm_timezone=(stringToUTF8("GMT", 228880, 4), 228880);function _gmtime_r(time, tmPtr) {
+  var ___tm_timezone=(stringToUTF8("GMT", 228608, 4), 228608);function _gmtime_r(time, tmPtr) {
       var date = new Date(HEAP32[((time)>>2)]*1000);
       HEAP32[((tmPtr)>>2)]=date.getUTCSeconds();
       HEAP32[(((tmPtr)+(4))>>2)]=date.getUTCMinutes();
@@ -7082,10 +7081,6 @@ var _dispatch = Module["_dispatch"] = function() {
 
 var _event = Module["_event"] = function() {
   return Module["asm"]["event"].apply(null, arguments)
-};
-
-var _http_response = Module["_http_response"] = function() {
-  return Module["asm"]["http_response"].apply(null, arguments)
 };
 
 var _handle_callback = Module["_handle_callback"] = function() {
