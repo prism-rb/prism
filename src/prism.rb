@@ -391,20 +391,11 @@ class Prism::ExternalReferences
     id
   end
 
-  def self.get_reference(descriptor_and_callable)
-    id = @@reference_id
-
-    @@references[id] = descriptor_and_callable
-
-    @@reference_id += 1
-
-    id
-  end
 
   def self.handle_callback(reference)
     args = []
 
-    descriptor_and_callable = @@references[reference]
+    callable = deference(reference)
 
     arg_count = InternalBindings.get_arg_count
 
@@ -413,8 +404,6 @@ class Prism::ExternalReferences
       type = InternalBindings.get_type_of(ref.value)
       args << JS::Value.translate_js_value(ref, type)
     end
-
-    callable = descriptor_and_callable[:callable]
 
     callable.call(*args.slice(0...callable.parameters.size))
   end
@@ -445,9 +434,24 @@ module JS
   TypeDef = Struct.new(:name, :types)
 
   class Undefined
+    def self.singleton
+      @@instance ||= Undefined.new
+    end
   end
 
-  UNDEFINED = Undefined.new
+  class Constructor
+    def initialize(reference: reference)
+      @reference = reference
+    end
+
+    def new(*args, &block)
+      JS::Value.send_args_to_js(*args, &block)
+
+      reference = InternalBindings.call_constructor(@reference.value)
+
+      JS::Value.translate_js_value(reference, InternalBindings.get_type_of(reference.value))
+    end
+  end
 
   class Value
     def initialize(reference:)
@@ -476,12 +480,22 @@ module JS
         InternalBindings.get_value_string(reference.value)
       when "undefined"
         JS::Undefined
-      else
+      when "object"
         JS::Value.new(reference: reference)
+      when "boolean"
+        value = InternalBindings.get_value_number(reference.value)
+
+        if value.to_i == 1
+          true
+        else
+          false
+        end
+      else
+        fail "unhandled type #{type}"
       end
     end
 
-    def call_function(reference, *args, &block)
+    def self.send_args_to_js(*args, &block)
       InternalBindings.clear_args
 
       args.each_with_index do |arg, index|
@@ -490,28 +504,31 @@ module JS
           InternalBindings.set_arg_string(index, arg)
         when JS::Value
           InternalBindings.set_arg_value(index, arg._reference.value)
-        else
-          if arg.respond_to?(:call)
-            arg_reference = Prism::ExternalReferences.get_reference({
-              callable: arg
-            })
+        when Numeric
+          InternalBindings.set_arg_number(index, arg)
+        when Proc, Method
+          arg_reference = Prism::ExternalReferences.get_ruby_reference(arg)
 
-            InternalBindings.set_arg_callback(index, arg_reference)
-          else
-            InternalBindings.set_arg_number(index, arg)
-          end
+          InternalBindings.set_arg_callback(index, arg_reference)
+        else
+          fail "don't know how to pass this to js: #{arg}"
         end
       end
 
       if block
-        block_reference = Prism::ExternalReferences.get_reference({
-          callable: block
-        })
+        block_reference = Prism::ExternalReferences.get_ruby_reference(block)
 
         InternalBindings.set_arg_callback(args.length, block_reference)
       end
+    end
 
-      result_reference = InternalBindings.call_method_reference(@reference.value, reference.value)
+    def call_function(reference, *args, &block)
+      self.class.send_args_to_js(*args, &block)
+
+      result_reference = InternalBindings.call_method_reference(
+        @reference.value,
+        reference.value
+      )
 
       self.class.translate_js_value(
         result_reference,
@@ -527,6 +544,14 @@ module JS
         InternalBindings.set_object_value_number(@reference.value, name, value)
       when JS::Value
         InternalBindings.set_object_value(@reference.value, name, value._reference.value)
+      when JS::Undefined
+        InternalBindings.set_object_undefined(@reference.value, name)
+      when Proc
+        arg_reference = Prism::ExternalReferences.get_ruby_reference(value)
+
+        callback_reference = InternalBindings.make_callback_reference(arg_reference)
+
+        InternalBindings.set_object_value(@reference.value, name, callback_reference.value)
       else
         ruby_reference_id = Prism::ExternalReferences.get_ruby_reference(value)
 
@@ -535,6 +560,13 @@ module JS
     end
 
     def method_missing(name, *args, &block)
+      is_constructor = false
+
+      if name.to_s.end_with?("!")
+        name = name.to_s[0...-1]
+        is_constructor = true
+      end
+
       if name.to_s.end_with?("=") && args.length > 0
         value = args.first
 
@@ -550,10 +582,8 @@ module JS
       type = InternalBindings.get_type_of(reference.value)
 
       if type == "function" then
-        is_constructor = InternalBindings.is_function_constructor(reference.value)
-
         if is_constructor
-          JS::Value.new(reference: reference)
+          JS::Constructor.new(reference: reference)
         else
           call_function(reference, *args, &block)
         end
@@ -579,6 +609,10 @@ module JS
       base.define_method(:document) do
         JS::Global.document
       end
+
+      base.define_method(:undefined) do
+        JS::Global.undefined
+      end
     end
 
     def self.window
@@ -587,6 +621,10 @@ module JS
 
     def self.document
       @@document ||= JS::Value.new(reference: InternalBindings.document_reference)
+    end
+
+    def self.undefined
+      JS::Undefined.singleton
     end
   end
 end

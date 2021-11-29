@@ -39,8 +39,12 @@ class JSBindingsTest < Prism::Component
     fail "Assertion error" unless condition
   end
 
+  def assert!(condition)
+    assert(!condition)
+  end
+
   def assert_eq(a, b)
-    fail "Assertion error: Expected #{a} to eq #{b}" unless a == b
+    fail "Assertion error: Expected `#{a}` to eq `#{b}`" unless a == b
   end
 
   def render
@@ -86,6 +90,36 @@ class JSBindingsTest < Prism::Component
       assert div.foo == "bar"
     end
 
+    run_test "setting a boolean property" do
+      div = document.createElement('div')
+
+      div.foo = false
+
+      assert div.foo == false
+    end
+
+    run_test "setting an object property" do
+      div = document.createElement('div')
+
+      foo = Struct.new(:bar).new(5)
+
+      div.foo = foo
+
+      assert_eq(div.foo.bar, 5)
+    end
+
+    run_test "setting a proc property" do
+      proc_called = false
+
+      window.foo = Proc.new do
+        proc_called = true
+      end
+
+      window.foo.call
+
+      assert_eq(proc_called, true)
+    end
+
     run_test "setting a property to a JS::Value" do
       div1 = document.createElement('div')
       div2 = document.createElement('div')
@@ -97,6 +131,22 @@ class JSBindingsTest < Prism::Component
       assert div1.el.prop == "hello"
     end
 
+    run_test "setting a property to JS::Undefined" do
+      window.prop = undefined
+
+      assert_eq(window.eval("String(window.prop)"), "undefined")
+    end
+
+    run_test "setting and getting a falsy value" do
+      window.prop = 0
+
+      assert_eq(window.prop, 0)
+
+      window.prop = false
+
+      assert_eq(window.prop, false)
+    end
+
     run_test "setting a property to a hash" do
       div = document.createElement('div')
 
@@ -105,10 +155,29 @@ class JSBindingsTest < Prism::Component
       assert_eq(div.obj["a"], "hello")
     end
 
-    run_test "making a set" do
-      set = window.Set.new
+    run_test "setting a property to an array" do
+      div = document.createElement('div')
 
-      window.foo = Hash.new
+      div.obj = [1, 2, 3]
+
+      assert_eq(div.obj.last, 3)
+    end
+
+    run_test "getting a string property" do
+      assert(document.querySelector('body').innerText.is_a?(String))
+    end
+
+    run_test "getting a numeric property" do
+      assert(window.innerWidth.is_a?(Float))
+    end
+
+    run_test "making a set" do
+      set = window.Set!.new
+
+      set.add 5
+
+      assert(set.has 5)
+      assert!(set.has 6)
     end
   end
 end

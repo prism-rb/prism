@@ -169,6 +169,18 @@ set_object_value(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_object_undefined(mrb_state *mrb, mrb_value self) {
+  mrb_value index, name, value;
+  mrb_get_args(mrb, "iS", &index, &name);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setObjectValue($0, UTF8ToString($1), undefined);
+  }, index, RSTRING_PTR(name));
+
+  return mrb_nil_value();
+}
+
+mrb_value
 set_object_ruby_value(mrb_state *mrb, mrb_value self) {
   mrb_value index, name, value;
   mrb_get_args(mrb, "iSi", &index, &name, &value);
@@ -200,6 +212,16 @@ call_method_reference(mrb_state *mrb, mrb_value self) {
   return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
     return Prism.callMethodReturningReference($0, $1);
   }, this_reference, reference));
+}
+
+mrb_value
+call_constructor(mrb_state *mrb, mrb_value self) {
+  mrb_value reference;
+  mrb_get_args(mrb, "i", &reference);
+
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.callConstructor($0);
+  }, reference));
 }
 
 EM_JS(char*, get_value_string_, (mrb_value reference), {
@@ -278,6 +300,16 @@ get_ruby_reference_id(mrb_state *mrb, mrb_value self) {
   }, reference);
 
   return mrb_fixnum_value(value);
+}
+
+mrb_value
+make_callback_reference(mrb_state *mrb, mrb_value self) {
+  mrb_value index, reference;
+  mrb_get_args(mrb, "i", &reference);
+
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.makeCallbackReference($0);
+  }, reference));
 }
 
 mrb_value
@@ -478,6 +510,15 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "call_constructor",
+    call_constructor,
+    MRB_ARGS_REQ(1)
+  );
+
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "get_value_string",
     get_value_string,
     MRB_ARGS_REQ(1)
@@ -610,6 +651,14 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "set_object_undefined",
+    set_object_undefined,
+    MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "set_object_ruby_value",
     set_object_ruby_value,
     MRB_ARGS_REQ(3)
@@ -636,6 +685,14 @@ main(int argc, const char * argv[])
     binding_class,
     "is_function_constructor",
     is_function_constructor,
+    MRB_ARGS_REQ(1)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "make_callback_reference",
+    make_callback_reference,
     MRB_ARGS_REQ(1)
   );
 

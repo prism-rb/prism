@@ -561,8 +561,8 @@ var wasmMemory;
 // In the wasm backend, we polyfill the WebAssembly object,
 // so this creates a (non-native-wasm) table for us.
 var wasmTable = new WebAssembly.Table({
-  'initial': 741,
-  'maximum': 741 + 0,
+  'initial': 744,
+  'maximum': 744 + 0,
   'element': 'anyfunc'
 });
 
@@ -1161,11 +1161,11 @@ function updateGlobalBufferAndViews(buf) {
 }
 
 var STATIC_BASE = 1024,
-    STACK_BASE = 5471648,
+    STACK_BASE = 5471856,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 228768,
-    DYNAMIC_BASE = 5471648,
-    DYNAMICTOP_PTR = 228608;
+    STACK_MAX = 228976,
+    DYNAMIC_BASE = 5471856,
+    DYNAMICTOP_PTR = 228816;
 
 
 
@@ -1584,13 +1584,16 @@ var ASM_CONSTS = [function() {return Prism.getWindowReference();},
  function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},
  function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},
  function($0, $1, $2) {return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);},
+ function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), undefined);},
  function($0, $1, $2) {return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);},
  function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},
  function($0, $1) {return Prism.callMethodReturningReference($0, $1);},
+ function($0) {return Prism.callConstructor($0);},
  function($0) {return Prism.getValueNumber($0);},
  function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},
  function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},
  function($0) {return Prism.getRubyReferenceId($0);},
+ function($0) {return Prism.makeCallbackReference($0);},
  function($0) {return Prism.checkIfFunctionIsContructor($0);},
  function() {return Prism.getArgCount();},
  function($0) {return Prism.getArgNumber($0);},
@@ -1635,7 +1638,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
 
 
 
-// STATICTOP = STATIC_BASE + 227744;
+// STATICTOP = STATIC_BASE + 227952;
 /* global initializers */  __ATINIT__.push({ func: function() { ___wasm_call_ctors() } });
 
 
@@ -5809,7 +5812,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
     }
 
   function _emscripten_get_sbrk_ptr() {
-      return 228608;
+      return 228816;
     }
 
   
@@ -6330,7 +6333,7 @@ function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); 
   function _getpwnam() { throw 'getpwnam: TODO' }
 
   
-  var ___tm_timezone=(stringToUTF8("GMT", 228672, 4), 228672);function _gmtime_r(time, tmPtr) {
+  var ___tm_timezone=(stringToUTF8("GMT", 228880, 4), 228880);function _gmtime_r(time, tmPtr) {
       var date = new Date(HEAP32[((time)>>2)]*1000);
       HEAP32[((tmPtr)>>2)]=date.getUTCSeconds();
       HEAP32[(((tmPtr)+(4))>>2)]=date.getUTCMinutes();

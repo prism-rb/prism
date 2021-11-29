@@ -962,10 +962,7 @@ var modulesToLoad = [];
 
 function run(element, main, config = {}) {
   currentContainer = element;
-  modulesToLoad = [
-    fetchAndLoad("/prism-ruby/prism.rb"),
-    fetchAndLoad(main),
-  ];
+  modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
 
   load(modulesToLoad, main, config);
 }
@@ -987,8 +984,7 @@ function setArgNumber(index, value) {
   args[index] = value;
 }
 
-
-const RUBY_VALUE = Symbol('RUBY_VALUE');
+const RUBY_VALUE = Symbol("RUBY_VALUE");
 
 let callbackArgs = [];
 
@@ -998,11 +994,24 @@ function cleanupReference(reference) {
   Module.ccall("cleanup_reference", "void", ["int"], [reference]);
 }
 
+function makeCallbackReference(callbackReference) {
+  function callbackHandler(...args) {
+    callbackArgs = args;
+    Module.ccall("handle_callback", "void", ["int"], [callbackReference]);
+  }
+
+  callbackHandler[RUBY_VALUE] = callbackReference;
+
+  registry.register(callbackHandler, callbackReference);
+
+  return getReference(callbackHandler);
+}
+
 function setArgCallback(index, reference) {
   function callbackHandler(...args) {
     callbackArgs = args;
     Module.ccall("handle_callback", "void", ["int"], [reference]);
-  };
+  }
 
   args[index] = callbackHandler;
 
@@ -1061,7 +1070,6 @@ function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
   }
 }
 
-
 function getReference(obj) {
   if (obj == null) {
     return 0;
@@ -1082,11 +1090,9 @@ function getWindowReference() {
   return getReference(window);
 }
 
-
 function getDocumentReference() {
   return getReference(document);
 }
-
 
 function callMethod(reference, methodName) {
   const value = references.get(reference);
@@ -1111,7 +1117,9 @@ function callMethodReturningReference(thisReference, reference) {
 
   try {
     if (!value || !thisValue) {
-      throw new Error(`Attempted to call invalid reference: ${thisReference}, ${reference}, ${value}`);
+      throw new Error(
+        `Attempted to call invalid reference: ${thisReference}, ${reference}, ${value}`
+      );
     }
 
     const result = value.apply(thisValue, args);
@@ -1123,6 +1131,24 @@ function callMethodReturningReference(thisReference, reference) {
   }
 }
 
+function callConstructor(reference) {
+  const value = references.get(reference);
+
+  try {
+    if (!value) {
+      throw new Error(
+        `Attempted to construct invalid reference: ${reference}, ${value}`
+      );
+    }
+
+    const result = Reflect.construct(value, args);
+
+    return getReference(result);
+  } catch (e) {
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+  }
+}
 
 function getValueString(reference) {
   const value = references.get(reference);
@@ -1146,11 +1172,11 @@ function getValueNumber(reference) {
   }
 }
 
-
 function getValueReference(reference, property) {
   const value = references.get(reference);
 
   try {
+    // TODO - this breaks on falsey values
     if (!value) {
       throw new Error(
         `Attempted to look up ${property} on invalid reference: ${reference}`
@@ -1170,7 +1196,7 @@ function getTypeOf(reference) {
   try {
     const type = typeof value;
 
-    if (type === "object" && RUBY_VALUE in value) {
+    if ((type === "object" || type === "function") && RUBY_VALUE in value) {
       return "ruby_value";
     }
 
@@ -1196,7 +1222,15 @@ function checkIfFunctionIsContructor(reference) {
   const value = references.get(reference);
 
   try {
-    return value.prototype && 'constructor' in value.prototype;
+    if (value === Symbol) {
+      return false;
+    }
+
+    return (
+      value.prototype &&
+      "constructor" in value.prototype &&
+      value.prototype.constructor !== Function
+    );
   } catch (e) {
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
@@ -1277,6 +1311,7 @@ window.Prism = {
   getValueNumber,
   callMethod,
   callMethodReturningReference,
+  callConstructor,
   render,
   stringifyEvent,
   getWindowReference,
@@ -1287,8 +1322,9 @@ window.Prism = {
   getArgReference,
   getArgClassName,
   getTypeOf,
+  makeCallbackReference,
   getRubyReferenceId,
-  checkIfFunctionIsContructor
+  checkIfFunctionIsContructor,
 };
 
 function render() {
