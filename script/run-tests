@@ -29,7 +29,20 @@ class TestRunner
       if (j["method"] == "Runtime.consoleAPICalled")
         log_line = j["params"]["args"].map { |a| a["value"] }.join(' ')
 
-        super log_line
+        if j["params"]["type"] == "error"
+          super "JS Error: #{log_line}"
+
+          frames = j["params"]["stackTrace"]["callFrames"]
+
+          max_width = frames.map { |f| f["functionName"].length }.max + 2
+
+          frames.each do |frame|
+            name = frame["functionName"].ljust(max_width)
+            super("  #{name} #{frame['url']}:#{frame['lineNumber']}:#{frame['columnNumber']}")
+          end
+        else
+          super log_line
+        end
 
         if log_line.start_with?("Exit code:")
           code = log_line.split(":").last
