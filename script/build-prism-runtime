@@ -16,7 +16,7 @@ puts "Compiling to Wasm..."
 `
   emcc \
     -s ALLOW_MEMORY_GROWTH=1 \
-    -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event', '_load', '_eval', '_print_backtrace', '_handle_callback', '_cleanup_reference']" \
+    -s EXPORTED_FUNCTIONS="['_main', '_render', '_dispatch', '_event', '_load', '_eval', '_print_backtrace', '_handle_callback', '_cleanup_reference', '_get_ruby_reference_type', '_get_ruby_reference_number', '_get_ruby_reference_string', '_load_ruby']" \
     -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
     -s WASM=1 \
     -Oz \

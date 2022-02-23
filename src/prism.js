@@ -123,7 +123,7 @@ const references = new Map();
 let args = [];
 
 function clearArgs() {
-  args = [];
+  args.splice(0, args.length);
 }
 
 function setArgString(index, value) {
@@ -139,6 +139,19 @@ const RUBY_VALUE = Symbol("RUBY_VALUE");
 let callbackArgs = [];
 
 const registry = new FinalizationRegistry(cleanupReference);
+
+function tryCatchThrow(f) {
+  try {
+    return f();
+  } catch (e) {
+    if (e === "longjmp") {
+      throw e;
+    }
+    console.error(e);
+    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+    throw e;
+  }
+}
 
 function cleanupReference(reference) {
   Module.ccall("cleanup_reference", "void", ["int"], [reference]);
@@ -171,39 +184,67 @@ function setArgCallback(index, reference) {
 function setArgValue(index, reference) {
   const referenceValue = references.get(reference);
 
-  try {
+  tryCatchThrow(() => {
     args[index] = referenceValue;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function setObjectValue(reference, name, value) {
   const referenceValue = references.get(reference);
 
-  try {
+  tryCatchThrow(() => {
     referenceValue[name] = value;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function setObjectValueFromReference(reference, name, valueReference) {
   const obj = references.get(reference);
   const value = references.get(valueReference);
 
-  try {
+  tryCatchThrow(() => {
     obj[name] = value;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function makeRubyValue(rubyReferenceId) {
-  return { [RUBY_VALUE]: rubyReferenceId };
+  const value = { [RUBY_VALUE]: rubyReferenceId };
+  const proxyMethods = {
+    get: function (obj, prop) {
+      if (prop === RUBY_VALUE) {
+        return obj[prop];
+      }
+
+      return tryCatchThrow(() =>{
+        const rubyType = Module.ccall(
+          "get_ruby_reference_type",
+          "string",
+          ["string", "int"],
+          [prop, rubyReferenceId]
+        );
+
+
+        if (rubyType === 'number') {
+          return Module.ccall(
+            "get_ruby_reference_number",
+            "float",
+            ["string", "int"],
+            [prop, rubyReferenceId]
+          );
+        } else if (rubyType === 'string') {
+          return Module.ccall(
+            "get_ruby_reference_string",
+            "string",
+            ["string", "int"],
+            [prop, rubyReferenceId]
+          );
+        }
+      })
+
+      // TODO - moar types
+    },
+  };
+
+  return new Proxy(value, proxyMethods);
 }
 
 function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
@@ -212,12 +253,9 @@ function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
 
   registry.register(value, rubyReferenceId);
 
-  try {
+  tryCatchThrow(() => {
     obj[name] = value;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getReference(obj) {
@@ -244,10 +282,14 @@ function getDocumentReference() {
   return getReference(document);
 }
 
+function getArgsReference() {
+  return getReference(args);
+}
+
 function callMethod(reference, methodName) {
   const value = references.get(reference);
 
-  try {
+  tryCatchThrow(() => {
     if (!value) {
       throw new Error(
         `Attempted to call ${methodName} on invalid reference: ${reference}`
@@ -255,17 +297,14 @@ function callMethod(reference, methodName) {
     }
 
     value[methodName].apply(value, args);
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function callMethodReturningReference(thisReference, reference) {
   const thisValue = references.get(thisReference);
   const value = references.get(reference);
 
-  try {
+  return tryCatchThrow(() => {
     if (!value || !thisValue) {
       throw new Error(
         `Attempted to call invalid reference: ${thisReference}, ${reference}, ${value}`
@@ -275,16 +314,13 @@ function callMethodReturningReference(thisReference, reference) {
     const result = value.apply(thisValue, args);
 
     return getReference(result);
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function callConstructor(reference) {
   const value = references.get(reference);
 
-  try {
+  return tryCatchThrow(() => {
     if (!value) {
       throw new Error(
         `Attempted to construct invalid reference: ${reference}, ${value}`
@@ -294,38 +330,28 @@ function callConstructor(reference) {
     const result = Reflect.construct(value, args);
 
     return getReference(result);
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getValueString(reference) {
   const value = references.get(reference);
 
-  try {
+  return tryCatchThrow(() => {
     return value.toString();
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getValueNumber(reference) {
   const value = references.get(reference);
 
-  try {
+  return tryCatchThrow(() => {
     return Number(value);
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getValueReference(reference, property) {
   const value = references.get(reference);
-
-  try {
+  return tryCatchThrow(() => {
     // TODO - this breaks on falsey values
     if (!value) {
       throw new Error(
@@ -334,16 +360,13 @@ function getValueReference(reference, property) {
     }
 
     return getReference(value[property]);
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getTypeOf(reference) {
   const value = references.get(reference);
 
-  try {
+  return tryCatchThrow(() => {
     const type = typeof value;
 
     if ((type === "object" || type === "function") && RUBY_VALUE in value) {
@@ -351,27 +374,21 @@ function getTypeOf(reference) {
     }
 
     return typeof value;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getRubyReferenceId(reference) {
   const value = references.get(reference);
 
-  try {
+  return tryCatchThrow(() => {
     return value[RUBY_VALUE];
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function checkIfFunctionIsContructor(reference) {
   const value = references.get(reference);
 
-  try {
+  return tryCatchThrow(() => {
     if (value === Symbol) {
       return false;
     }
@@ -381,67 +398,40 @@ function checkIfFunctionIsContructor(reference) {
       "constructor" in value.prototype &&
       value.prototype.constructor !== Function
     );
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getArgCount() {
-  try {
-    return callbackArgs.length;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  return tryCatchThrow(() => callbackArgs.length);
 }
 
 function getArgString(index) {
   const value = callbackArgs[index];
-
-  try {
-    return value.toString();
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  return tryCatchThrow(() => value.toString());
 }
 
 function getArgNumber(index) {
-  const value = callbackArgs[index];
-
-  try {
-    return value;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  return callbackArgs[index];
 }
 
 function getArgReference(index) {
   const value = callbackArgs[index];
 
-  try {
+  return tryCatchThrow(() => {
     return getReference(value);
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 function getArgClassName(index) {
   const value = callbackArgs[index];
 
-  try {
+  return tryCatchThrow(() => {
     if (!value || !value.constructor) {
       return "";
     }
 
     return value.constructor.name;
-  } catch (e) {
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-  }
+  });
 }
 
 window.Prism = {
@@ -466,6 +456,7 @@ window.Prism = {
   stringifyEvent,
   getWindowReference,
   getDocumentReference,
+  getArgsReference,
   getArgCount,
   getArgString,
   getArgNumber,
@@ -475,6 +466,7 @@ window.Prism = {
   makeCallbackReference,
   getRubyReferenceId,
   checkIfFunctionIsContructor,
+  require: prismRequire,
 };
 
 function render() {
@@ -502,24 +494,72 @@ function _eval(s) {
   return Module.ccall("eval", "string", ["string"], [s]);
 }
 
+async function prismRequire(...paths) {
+  for (const path of paths) {
+    await fetchAndLoad(path).then((module) => {
+      writeModule(module.name, module.text);
+      Module.ccall("load_ruby", "number", ["string"], [module.name]);
+    });
+  }
+}
+
+require_regex = /require(_relative)?\s*\(?\s*['|"]([^'|"]+)/;
+
+function transformModule(moduleText) {
+  const lines = moduleText.split("\n");
+  const dependencies = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    const match = line.match(require_regex);
+    if (match) {
+      dependencies.push(match[2]);
+    } else {
+      if (dependencies.length === 0) {
+        return moduleText;
+      }
+
+      bodyText = lines
+        .slice(i)
+        .map((line) => `  ${line}`)
+        .join("\n");
+
+      const result = `async_require([${dependencies
+        .map((d) => `"${d}"`)
+        .join(",")}]) do\n${bodyText}\nend`;
+
+      console.log(result);
+
+      return result;
+    }
+  }
+
+  return moduleText;
+}
+
+function writeModule(name, text) {
+  const parts = name.split("/").filter((a) => a.trim() !== "");
+
+  const directories = parts.slice(0, -1);
+  const basename = parts.slice(-1)[0];
+
+  const pwd = [];
+  for (let d of directories) {
+    try {
+      FS.mkdir("./" + pwd.concat(d).join("/"));
+    } catch (e) {}
+    pwd.push(d);
+  }
+
+  FS.writeFile(`./${name}`, transformModule(text));
+}
+
 function load(modulesToLoad, main, config = {}) {
   modulePromise.then(() => {
     Promise.all(modulesToLoad).then((modules) => {
       for (let m of modules) {
-        const parts = m.name.split("/").filter((a) => a.trim() !== "");
-
-        const directories = parts.slice(0, -1);
-        const basename = parts.slice(-1)[0];
-
-        const pwd = [];
-        for (let d of directories) {
-          try {
-            FS.mkdir("./" + pwd.concat(d).join("/"));
-          } catch (e) {}
-          pwd.push(d);
-        }
-
-        FS.writeFile(`./${m.name}`, m.text);
+        writeModule(m.name, m.text);
       }
 
       const result = Module.ccall(

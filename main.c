@@ -73,6 +73,12 @@ get_document_reference(mrb_state *mrb, mrb_value self){
   }));
 }
 
+mrb_value
+get_args_reference(mrb_state *mrb, mrb_value self){
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.getArgsReference();
+  }));
+}
 
 mrb_value
 clear_args(mrb_state *mrb, mrb_value self) {
@@ -472,6 +478,14 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "get_args_reference",
+    get_args_reference,
+    MRB_ARGS_REQ(0)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "call_method",
     call_method,
     MRB_ARGS_REQ(2)
@@ -705,19 +719,83 @@ mrb_value load_file(char* name) {
   return v;
 }
 
+void load_ruby(char* name) {
+  load_file(name);
+}
+
 void print_backtrace(char* msg) {
   mrb_exc_raise(mrb, mrb_exc_new_str(mrb, E_SCRIPT_ERROR, mrb_str_new_cstr(mrb, msg)));
   mrb_print_backtrace(mrb);
+}
+
+char* get_ruby_reference_type(char* prop_name, int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_reference_type",
+    2,
+    mrb_str_new_cstr(mrb, prop_name),
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return RSTRING_PTR(value);
+}
+
+double get_ruby_reference_number(char* prop_name, int ruby_reference_id) {
+  mrb_float value;
+
+  value = mrb_float(mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_reference_number",
+    2,
+    mrb_str_new_cstr(mrb, prop_name),
+    mrb_int_value(mrb, ruby_reference_id)
+  ));
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return value;
+}
+
+char* get_ruby_reference_string(char* prop_name, int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_reference_string",
+    2,
+    mrb_str_new_cstr(mrb, prop_name),
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return RSTRING_PTR(value);
 }
 
 int load(char* main, char* config) {
   const char* class_name;
   mrb_define_global_const(mrb, "JSON_CONFIG", mrb_str_new_cstr(mrb, config));
   load_file("prism-ruby/prism.rb");
-  app = load_file(main);
   struct RClass* prism_module = mrb_module_get(mrb, "Prism");
   struct RClass* mount_class = mrb_class_get_under(mrb, prism_module, "Mount");
   external_references = mrb_class_get_under(mrb, prism_module, "ExternalReferences");
+  load_file(main);
 
   if(!mrb_obj_is_kind_of(mrb, app, mount_class)) {
     class_name = mrb_obj_classname(mrb, app);
@@ -726,6 +804,7 @@ int load(char* main, char* config) {
 
     return 1;
   }
+
   mrb_gc_register(mrb, app);
 
   return 0;

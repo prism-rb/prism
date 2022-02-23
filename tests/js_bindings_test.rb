@@ -4,34 +4,37 @@ class JSBindingsTest < Prism::Component
   def initialize
     @results = []
 
-    puts ""
+    run
+  end
+
+  def run
+    puts " "
 
     tests
 
     passes = @results.select { |result| result[:passed] }
     failures = @results.reject { |result| result[:passed] }
 
+    puts " "
     puts "Finished: #{passes.length}/#{@results.length} passed"
     puts "Exit code: #{failures.length > 0 ? 1 : 0}"
   end
 
   def run_test(name)
     begin
-      puts name
       yield
     rescue Exception => e
       @results << result = {name: name, passed: false, error: e}
-      puts " ✖ Failed"
-      puts ""
+      puts " ✖ failed! - #{name}"
+      puts " "
       puts result[:error].inspect
       result[:error].backtrace.each do |line|
         puts "  " + line
       end
-      puts ""
+      puts " "
     else
       @results << result = {name: name, passed: true}
-      puts " ✔ Passed"
-      puts ""
+      puts " ✔ passed - #{name}"
     end
   end
 
@@ -182,8 +185,18 @@ class JSBindingsTest < Prism::Component
 
     run_test "calling a method that returns null" do
       regexp = window.RegExp!.new("test")
-
       assert_eq(regexp.exec('foo'), nil)
+    end
+
+    run_test "passing an array of numbers to a JS method" do
+      window.eval("window.getFirst = function(arr) {return arr[0]}")
+
+      assert_eq(window.getFirst([1, 2, 3]), 1)
+      assert_eq(window.getFirst([1, 2, 3]), 1)
+    end
+
+    run_test "passing an array of strings to a JS method" do
+      assert_eq(window.getFirst(['a', 'b', 'c']), 'a')
     end
   end
 end

@@ -1,3 +1,9 @@
+module Kernel
+  def async_require(paths)
+    JS::Global.window.Prism.require(*paths)
+  end
+end
+
 module Prism
   @@instances = {}
 
@@ -338,49 +344,100 @@ module DOM
   end
 end
 
-class Prism::ExternalReferences
-  @@reference_id = 0
-  @@references = {}
+module Prism
+  class ExternalReferences
+    @@reference_id = 0
+    @@references = {}
 
-  def self.get_ruby_reference(value)
-    id = @@reference_id
+    def self.get_ruby_reference(value)
+      id = @@reference_id
 
-    @@references[id] = value
+      @@references[id] = value
 
-    @@reference_id += 1
+      @@reference_id += 1
 
-    id
-  end
-
-
-  def self.handle_callback(reference)
-    args = []
-
-    callable = deference(reference)
-
-    arg_count = InternalBindings.get_arg_count
-
-    arg_count.times.with_index do |i|
-      ref = InternalBindings.get_arg_reference(i)
-      type = InternalBindings.get_type_of(ref.value)
-      args << JS::Value.translate_js_value(ref, type)
+      id
     end
 
-    callable.call(*args.slice(0...callable.parameters.size))
-  end
 
-  def self.cleanup_reference(reference)
-    @@references.delete(reference)
-  end
+    def self.handle_callback(reference)
+      args = []
 
-  def self.deference(ruby_reference_id)
-    @@references[ruby_reference_id]
+      callable = dereference(reference)
+
+      arg_count = InternalBindings.get_arg_count
+
+      arg_count.times.with_index do |i|
+        ref = InternalBindings.get_arg_reference(i)
+        type = InternalBindings.get_type_of(ref.value)
+        args << JS::Value.translate_js_value(ref, type)
+      end
+
+      callable.call(*args.slice(0...callable.parameters.size))
+    end
+
+    def self.cleanup_reference(reference)
+      @@references.delete(reference)
+    end
+
+    def self.dereference(ruby_reference_id)
+      @@references[ruby_reference_id]
+    end
+
+    def self.get_ruby_reference_type(prop_name, ruby_reference_id)
+      value = @@references[ruby_reference_id]
+
+      prop_name_as_int = prop_name.to_i
+
+      if prop_name_as_int.to_s == prop_name
+        prop_name = prop_name_as_int
+      end
+
+      case value[prop_name]
+      when String
+        "string"
+      when Numeric
+        "number"
+      else
+        fail "get_ruby_reference_type: #{prop_name} #{value[prop_name]} not handled"
+      end
+    end
+
+    def self.get_ruby_reference_number(prop_name, ruby_reference_id)
+      value = @@references[ruby_reference_id]
+
+      prop_name_as_int = prop_name.to_i
+
+      if prop_name_as_int.to_s == prop_name
+        prop_name = prop_name_as_int
+      end
+
+      value[prop_name].to_f
+    end
+
+    def self.get_ruby_reference_string(prop_name, ruby_reference_id)
+      value = @@references[ruby_reference_id]
+
+      prop_name_as_int = prop_name.to_i
+
+      if prop_name_as_int.to_s == prop_name
+        prop_name = prop_name_as_int
+      end
+
+      value[prop_name].to_s
+    end
   end
 end
 
 class RubyReference
   def initialize(reference:)
     @reference = reference
+  end
+end
+
+class InternalBindings
+  def self.args_reference
+    @args_reference ||= self.get_args_reference
   end
 end
 
@@ -420,8 +477,8 @@ module JS
       case type
       when "ruby_value"
         ruby_reference_id = InternalBindings.get_ruby_reference_id(reference.value)
-        Prism::ExternalReferences.deference(ruby_reference_id)
-      when "object"
+        Prism::ExternalReferences.dereference(ruby_reference_id)
+      when "object", "function"
         JS::Value.new(reference: reference)
       when "number"
         InternalBindings.get_value_number(reference.value)
@@ -429,8 +486,6 @@ module JS
         InternalBindings.get_value_string(reference.value)
       when "undefined"
         JS::Undefined
-      when "object"
-        JS::Value.new(reference: reference)
       when "boolean"
         value = InternalBindings.get_value_number(reference.value)
 
@@ -460,7 +515,12 @@ module JS
 
           InternalBindings.set_arg_callback(index, arg_reference)
         else
-          fail "don't know how to pass this to js: #{arg}"
+          ruby_reference_id = Prism::ExternalReferences.get_ruby_reference(arg)
+          InternalBindings.set_object_ruby_value(
+            InternalBindings.args_reference.value,
+            index.to_s,
+            ruby_reference_id
+          )
         end
       end
 
@@ -550,7 +610,6 @@ module JS
 
   module Global
     def self.included(base)
-
       base.define_method(:window) do
         JS::Global.window
       end

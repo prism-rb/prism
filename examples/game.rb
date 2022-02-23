@@ -1,3 +1,5 @@
+require "vector.rb"
+
 class CanvasExample < Prism::Component
   include JS::Global
 
@@ -14,10 +16,8 @@ class CanvasExample < Prism::Component
     document.body.style.margin = '0';
     document.body.appendChild(@canvas)
 
-    @x = 10
-    @y = 10
-    @x_speed = 0
-    @y_speed = 0
+    @position = Vector2D.new(10, 10)
+    @speed = Vector2D.new(0, 0)
 
     resize_canvas
     track_keyboard_events
@@ -82,13 +82,12 @@ class CanvasExample < Prism::Component
   end
 
   def step
-    @x_speed += speed if moving_right?
-    @x_speed -= speed if moving_left?
+    @speed.x += speed if moving_right?
+    @speed.x -= speed if moving_left?
 
-    @y_speed += 9.81 / 60 * @delta
+    @speed.y += 9.81 / 60 * @delta
 
-    @x += @x_speed
-    @y += @y_speed
+    @position += @speed
   end
 
   def draw
