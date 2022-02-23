@@ -222,7 +222,6 @@ function makeRubyValue(rubyReferenceId) {
           [prop, rubyReferenceId]
         );
 
-
         if (rubyType === 'number') {
           return Module.ccall(
             "get_ruby_reference_number",
@@ -237,9 +236,10 @@ function makeRubyValue(rubyReferenceId) {
             ["string", "int"],
             [prop, rubyReferenceId]
           );
+        } else if (rubyType === 'null') {
+          return null;
         }
       })
-
       // TODO - moar types
     },
   };
@@ -494,13 +494,15 @@ function _eval(s) {
   return Module.ccall("eval", "string", ["string"], [s]);
 }
 
-async function prismRequire(...paths) {
+async function prismRequire(cb, ...paths) {
   for (const path of paths) {
     await fetchAndLoad(path).then((module) => {
       writeModule(module.name, module.text);
       Module.ccall("load_ruby", "number", ["string"], [module.name]);
     });
   }
+
+  cb();
 }
 
 require_regex = /require(_relative)?\s*\(?\s*['|"]([^'|"]+)/;
@@ -569,7 +571,7 @@ function load(modulesToLoad, main, config = {}) {
         [main, JSON.stringify(config)]
       );
       if (result === 0) {
-        render();
+        //render();
       }
     });
   });

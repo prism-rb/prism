@@ -3,8 +3,6 @@ class JSBindingsTest < Prism::Component
 
   def initialize
     @results = []
-
-    run
   end
 
   def run
@@ -196,9 +194,23 @@ class JSBindingsTest < Prism::Component
     end
 
     run_test "passing an array of strings to a JS method" do
+      window.eval("window.getFirst = function(arr) {return arr[0]}")
+
       assert_eq(window.getFirst(['a', 'b', 'c']), 'a')
+    end
+
+    run_test "passing nil values to JS" do
+      window.eval("window.valueIsNull = function(v) {return v === null}")
+
+      assert_eq(window.valueIsNull(nil), true)
+    end
+
+    run_test "passing nil values to JS" do
+      window.eval("window.getFirst = function(arr) {return arr[0]}")
+
+      assert_eq(window.getFirst([nil, 'b', 'c']), nil)
     end
   end
 end
 
-Prism.mount(JSBindingsTest.new() {})
+JSBindingsTest.new.run

@@ -187,6 +187,18 @@ set_object_undefined(mrb_state *mrb, mrb_value self) {
 }
 
 mrb_value
+set_object_null(mrb_state *mrb, mrb_value self) {
+  mrb_value index, name, value;
+  mrb_get_args(mrb, "iS", &index, &name);
+
+  MAIN_THREAD_EM_ASM({
+    return Prism.setObjectValue($0, UTF8ToString($1), null);
+  }, index, RSTRING_PTR(name));
+
+  return mrb_nil_value();
+}
+
+mrb_value
 set_object_ruby_value(mrb_state *mrb, mrb_value self) {
   mrb_value index, name, value;
   mrb_get_args(mrb, "iSi", &index, &name, &value);
@@ -459,6 +471,7 @@ main(int argc, const char * argv[])
   mrb_define_method(mrb, js_reference_class, "to_i", mrb_reference_value, MRB_ARGS_REQ(0));
 
   binding_class = mrb_define_class(mrb, "InternalBindings", mrb->object_class);
+
   mrb_define_class_method(
     mrb,
     binding_class,
@@ -651,6 +664,14 @@ main(int argc, const char * argv[])
   mrb_define_class_method(
     mrb,
     binding_class,
+    "set_object_null",
+    set_object_null,
+    MRB_ARGS_REQ(2)
+  );
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
     "set_object_ruby_value",
     set_object_ruby_value,
     MRB_ARGS_REQ(3)
@@ -793,19 +814,9 @@ int load(char* main, char* config) {
   mrb_define_global_const(mrb, "JSON_CONFIG", mrb_str_new_cstr(mrb, config));
   load_file("prism-ruby/prism.rb");
   struct RClass* prism_module = mrb_module_get(mrb, "Prism");
-  struct RClass* mount_class = mrb_class_get_under(mrb, prism_module, "Mount");
+
   external_references = mrb_class_get_under(mrb, prism_module, "ExternalReferences");
   load_file(main);
-
-  if(!mrb_obj_is_kind_of(mrb, app, mount_class)) {
-    class_name = mrb_obj_classname(mrb, app);
-
-    fprintf(stderr, "[Prism] Error starting app.\n  Expected '%s' to return an instance of Prism::Mount but got a %s instead.\n  Did you remember to call Prism.mount on the last line?\n", main, class_name);
-
-    return 1;
-  }
-
-  mrb_gc_register(mrb, app);
 
   return 0;
 }

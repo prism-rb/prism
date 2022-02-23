@@ -45,7 +45,7 @@ class CanvasExample < Prism::Component
   def keydown(key_code)
     case key_code
     when "KeyW"
-      @y_speed -= 10
+      @speed.y -= 10
     end
   end
 
@@ -95,12 +95,8 @@ class CanvasExample < Prism::Component
     @context.fillRect(0, 0, @canvas.width, @canvas.height)
 
     @context.fillStyle = 'red'
-    @context.fillRect(@x, @y, 20, 20)
-  end
-
-  def render
-    div()
+    @context.fillRect(@position.x, @position.y, 20, 20)
   end
 end
 
-Prism.mount(CanvasExample.new() {})
+CanvasExample.new

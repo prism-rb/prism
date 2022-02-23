@@ -1,6 +1,6 @@
 module Kernel
-  def async_require(paths)
-    JS::Global.window.Prism.require(*paths)
+  def async_require(paths, &block)
+    JS::Global.window.Prism.require(block, *paths)
   end
 end
 
@@ -9,10 +9,6 @@ module Prism
 
   def self.instances
     @@instances
-  end
-
-  def self.mount(component)
-    Mount.new(component)
   end
 
   class Mount
@@ -398,6 +394,8 @@ module Prism
         "string"
       when Numeric
         "number"
+      when NilClass
+        "null"
       else
         fail "get_ruby_reference_type: #{prop_name} #{value[prop_name]} not handled"
       end
@@ -504,6 +502,11 @@ module JS
 
       args.each_with_index do |arg, index|
         case arg
+        when NilClass
+          InternalBindings.set_object_null(
+            InternalBindings.args_reference.value,
+            index.to_s
+          )
         when String
           InternalBindings.set_arg_string(index, arg)
         when JS::Value
