@@ -355,7 +355,6 @@ module Prism
       id
     end
 
-
     def self.handle_callback(reference)
       args = []
 
@@ -383,6 +382,10 @@ module Prism
     def self.get_ruby_reference_type(prop_name, ruby_reference_id)
       value = @@references[ruby_reference_id]
 
+      if value.respond_to?(prop_name)
+        return "method"
+      end
+
       prop_name_as_int = prop_name.to_i
 
       if prop_name_as_int.to_s == prop_name
@@ -396,13 +399,17 @@ module Prism
         "number"
       when NilClass
         "null"
+      when TrueClass
+        "true"
+      when FalseClass
+        "false"
       else
         fail "get_ruby_reference_type: #{prop_name} #{value[prop_name]} not handled"
       end
     end
 
     def self.get_ruby_reference_number(prop_name, ruby_reference_id)
-      value = @@references[ruby_reference_id]
+      value = dereference(ruby_reference_id)
 
       prop_name_as_int = prop_name.to_i
 
@@ -414,7 +421,7 @@ module Prism
     end
 
     def self.get_ruby_reference_string(prop_name, ruby_reference_id)
-      value = @@references[ruby_reference_id]
+      value = dereference(ruby_reference_id)
 
       prop_name_as_int = prop_name.to_i
 
@@ -423,6 +430,34 @@ module Prism
       end
 
       value[prop_name].to_s
+    end
+
+    def self.get_ruby_method_reference(prop_name, ruby_reference_id)
+      value = dereference(ruby_reference_id)
+
+      Prism::ExternalReferences.get_ruby_reference(value.method(prop_name))
+    end
+
+    def self.get_ruby_iterator_reference(ruby_reference_id)
+      value = dereference(ruby_reference_id)
+
+      Prism::ExternalReferences.get_ruby_reference(-> { JS::Iterator.new(value.each) })
+    end
+
+    def self.call_ruby_value_returning_reference(ruby_reference_id)
+      callable = dereference(ruby_reference_id)
+
+      args = []
+
+      arg_count = InternalBindings.get_arg_count
+
+      arg_count.times.with_index do |i|
+        ref = InternalBindings.get_arg_reference(i)
+        type = InternalBindings.get_type_of(ref.value)
+        args << JS::Value.translate_js_value(ref, type)
+      end
+
+      Prism::ExternalReferences.get_ruby_reference(callable.call(*args.slice(0...callable.parameters.size)))
     end
   end
 end
@@ -608,6 +643,24 @@ module JS
   class Window < Value
     def eval(*args, &block)
       method_missing(:eval, *args, &block)
+    end
+  end
+
+  class Iterator
+    def initialize(enumerator)
+      @done = false
+      @enumerator = enumerator
+    end
+
+    def next
+      begin
+        return {"done" => true} if @done
+
+        {"value" => @enumerator.next, "done" => false}
+      rescue StopIteration
+        @done = true
+        {"done" => true}
+      end
     end
   end
 

@@ -15,6 +15,9 @@
 #include <mruby/throw.h>
 #include <mruby/error.h>
 
+// EXPORT is used by the build-prism-runtime script to determine which functions can be used by ccall
+#define EXPORT
+
 mrb_value app;
 struct RClass* external_references;
 struct RClass* js_reference_class;
@@ -290,7 +293,7 @@ get_type_of(mrb_state *mrb, mrb_value self) {
   mrb_value reference, name;
   mrb_get_args(mrb, "i", &reference);
 
-  int value = MAIN_THREAD_EM_ASM_INT({
+  char* value = (char*)MAIN_THREAD_EM_ASM_INT({
     var string = Prism.getTypeOf($0, UTF8ToString($1));
     var lengthBytes = lengthBytesUTF8(string.toString()) + 1;
     var stringOnWasmHeap = _malloc(lengthBytes);
@@ -456,8 +459,7 @@ add_event_listener(mrb_state *mrb, mrb_value self){
   return mrb_nil_value();
 }
 
-int
-main(int argc, const char * argv[])
+EXPORT int main(int argc, const char * argv[])
 {
   struct RClass *dom_class, *binding_class;
 
@@ -740,16 +742,16 @@ mrb_value load_file(char* name) {
   return v;
 }
 
-void load_ruby(char* name) {
+EXPORT void load_ruby(char* name) {
   load_file(name);
 }
 
-void print_backtrace(char* msg) {
+EXPORT void print_backtrace(char* msg) {
   mrb_exc_raise(mrb, mrb_exc_new_str(mrb, E_SCRIPT_ERROR, mrb_str_new_cstr(mrb, msg)));
   mrb_print_backtrace(mrb);
 }
 
-char* get_ruby_reference_type(char* prop_name, int ruby_reference_id) {
+EXPORT char* get_ruby_reference_type(char* prop_name, int ruby_reference_id) {
   mrb_value value;
 
   value = mrb_funcall(
@@ -769,7 +771,7 @@ char* get_ruby_reference_type(char* prop_name, int ruby_reference_id) {
   return RSTRING_PTR(value);
 }
 
-double get_ruby_reference_number(char* prop_name, int ruby_reference_id) {
+EXPORT double get_ruby_reference_number(char* prop_name, int ruby_reference_id) {
   mrb_float value;
 
   value = mrb_float(mrb_funcall(
@@ -789,7 +791,7 @@ double get_ruby_reference_number(char* prop_name, int ruby_reference_id) {
   return value;
 }
 
-char* get_ruby_reference_string(char* prop_name, int ruby_reference_id) {
+EXPORT char* get_ruby_reference_string(char* prop_name, int ruby_reference_id) {
   mrb_value value;
 
   value = mrb_funcall(
@@ -809,7 +811,66 @@ char* get_ruby_reference_string(char* prop_name, int ruby_reference_id) {
   return RSTRING_PTR(value);
 }
 
-int load(char* main, char* config) {
+EXPORT int get_ruby_method_reference(char* prop_name, int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_method_reference",
+    2,
+    mrb_str_new_cstr(mrb, prop_name),
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return mrb_integer(value);
+}
+
+EXPORT int get_ruby_iterator_reference(int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_iterator_reference",
+    1,
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return mrb_integer(value);
+}
+
+EXPORT int call_ruby_value_returning_reference(int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "call_ruby_value_returning_reference",
+    1,
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return mrb_integer(value);
+}
+
+
+EXPORT int load(char* main, char* config) {
   const char* class_name;
   mrb_define_global_const(mrb, "JSON_CONFIG", mrb_str_new_cstr(mrb, config));
   load_file("prism-ruby/prism.rb");
@@ -821,7 +882,7 @@ int load(char* main, char* config) {
   return 0;
 }
 
-char* render() {
+EXPORT char* render() {
   mrb_value result = mrb_funcall(mrb, app, "render", 0);
   if (mrb->exc) {
     mrb_print_error(mrb);
@@ -830,7 +891,7 @@ char* render() {
   return RSTRING_PTR(result);
 }
 
-char* eval(char* input, int len) {
+EXPORT char* eval(char* input, int len) {
   mrb_int ai = mrb_gc_arena_save(mrb);
   mrb_value result = mrb_load_string_cxt(mrb, input, c);
   mrb_gc_arena_restore(mrb, ai);
@@ -841,7 +902,7 @@ char* eval(char* input, int len) {
   return RSTRING_PTR(mrb_obj_as_string(mrb, result));
 }
 
-void dispatch(char* message) {
+EXPORT void dispatch(char* message) {
   mrb_value str = mrb_str_new_cstr(mrb, message);
   mrb_gc_register(mrb, str);
   mrb_funcall(mrb, app, "dispatch", 1, str);
@@ -852,7 +913,7 @@ void dispatch(char* message) {
   mrb_gc_unregister(mrb, str);
 }
 
-void event(char* message, char* id) {
+EXPORT void event(char* message, char* id) {
   mrb_value str = mrb_str_new_cstr(mrb, message);
   mrb_value str2 = mrb_str_new_cstr(mrb, id);
   mrb_funcall(mrb, app, "event", 2, str, str2);
@@ -863,7 +924,7 @@ void event(char* message, char* id) {
   }
 }
 
-void handle_callback(int reference) {
+EXPORT void handle_callback(int reference) {
   mrb_funcall(mrb, mrb_obj_value(external_references), "handle_callback", 1, mrb_int_value(mrb, reference));
 
   if (mrb->exc) {
@@ -872,7 +933,7 @@ void handle_callback(int reference) {
   }
 }
 
-void cleanup_reference(int reference) {
+EXPORT void cleanup_reference(int reference) {
   mrb_funcall(mrb, mrb_obj_value(external_references), "cleanup_reference", 1, mrb_int_value(mrb, reference));
 
   if (mrb->exc) {

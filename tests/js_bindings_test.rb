@@ -45,7 +45,7 @@ class JSBindingsTest < Prism::Component
   end
 
   def assert_eq(a, b)
-    fail "Assertion error: Expected `#{a}` to eq `#{b}`" unless a == b
+    fail "Assertion error: Expected `#{a.inspect}` to eq `#{b.inspect}`" unless a == b
   end
 
   def render
@@ -132,6 +132,14 @@ class JSBindingsTest < Prism::Component
       assert div1.el.prop == "hello"
     end
 
+    run_test "setting a property to nil" do
+      div1 = document.createElement('div')
+
+      div1.prop = nil
+
+      assert_eq(div1.prop, nil)
+    end
+
     run_test "setting a property to JS::Undefined" do
       window.prop = undefined
 
@@ -205,10 +213,26 @@ class JSBindingsTest < Prism::Component
       assert_eq(window.valueIsNull(nil), true)
     end
 
-    run_test "passing nil values to JS" do
+    run_test "passing nil values in an array to JS" do
       window.eval("window.getFirst = function(arr) {return arr[0]}")
 
       assert_eq(window.getFirst([nil, 'b', 'c']), nil)
+    end
+
+    run_test "passing an iterable to JS" do
+      window.eval <<~JS
+        window.sum = function (arr) {
+          let total = 0;
+
+          for (let i of arr) {
+            total += i;
+          }
+
+          return total;
+        }
+      JS
+
+      assert_eq(window.sum([1, 2, 3]), 6)
     end
   end
 end

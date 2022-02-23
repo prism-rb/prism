@@ -857,7 +857,8 @@ var patch = snabbdom.init([
   require("snabbdom/modules/eventlisteners").default,
   require("snabbdom/modules/dataset").default,
 ]);
-snabbdom_h = require("snabbdom/h").default;
+var snabbdom_h = require("snabbdom/h").default;
+
 
 function stringifyEvent(e) {
   const obj = {};
@@ -997,9 +998,9 @@ function tryCatchThrow(f) {
     if (e === "longjmp") {
       throw e;
     }
+    throw e;
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-    throw e;
   }
 }
 
@@ -1057,11 +1058,56 @@ function setObjectValueFromReference(reference, name, valueReference) {
 }
 
 function makeRubyValue(rubyReferenceId) {
-  const value = { [RUBY_VALUE]: rubyReferenceId };
+  function value (...args) {
+    // call my current reference
+    // just return a damn ruby value, worry about primitive promotion later
+    callbackArgs = args;
+    const newRubyReferenceId = Module.ccall(
+      "call_ruby_value_returning_reference",
+      "int",
+      ["int"],
+      [rubyReferenceId]
+    );
+
+
+    return makeRubyValue(newRubyReferenceId);
+  }
+
+  value[RUBY_VALUE] = rubyReferenceId;
+
   const proxyMethods = {
     get: function (obj, prop) {
       if (prop === RUBY_VALUE) {
         return obj[prop];
+      }
+
+      if (prop === Symbol.iterator) {
+
+        prop = "each";
+
+        const rubyType = Module.ccall(
+          "get_ruby_reference_type",
+          "string",
+          ["string", "int"],
+          [prop, rubyReferenceId]
+        );
+
+        if (rubyType !== 'method') {
+          throw new Error('Ruby value does not implement #each and cannot be iterated');
+        }
+
+        const iteratorReference = Module.ccall(
+          "get_ruby_iterator_reference",
+          "int",
+          ["int"],
+          [rubyReferenceId]
+        );
+
+        return makeRubyValue(iteratorReference);
+      }
+
+      if (Symbol.toPrimitive && prop === Symbol.toPrimitive) {
+        return {}[Symbol.toPrimitive];
       }
 
       return tryCatchThrow(() =>{
@@ -1088,20 +1134,35 @@ function makeRubyValue(rubyReferenceId) {
           );
         } else if (rubyType === 'null') {
           return null;
+        } else if (rubyType === 'method') {
+          const methodRubyReferenceId =  Module.ccall(
+            "get_ruby_method_reference",
+            "int",
+            ["string", "int"],
+            [prop, rubyReferenceId]
+          );
+
+          return makeRubyValue(methodRubyReferenceId);
+        } else if (rubyType === 'true') {
+          return true;
+        } else if (rubyType === 'false') {
+          return false;
+        } else {
+          throw new Error('unhandled ruby type: ' + rubyType);
         }
       })
       // TODO - moar types
     },
   };
 
-  return new Proxy(value, proxyMethods);
+  const rubyValue = new Proxy(value, proxyMethods);
+  registry.register(rubyValue, rubyReferenceId);
+  return rubyValue;
 }
 
 function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
   const obj = references.get(reference);
   const value = makeRubyValue(rubyReferenceId);
-
-  registry.register(value, rubyReferenceId);
 
   tryCatchThrow(() => {
     obj[name] = value;
@@ -1381,8 +1442,6 @@ function transformModule(moduleText) {
         .map((d) => `"${d}"`)
         .join(",")}]) do\n${bodyText}\nend`;
 
-      console.log(result);
-
       return result;
     }
   }
@@ -1426,6 +1485,13 @@ function load(modulesToLoad, main, config = {}) {
     });
   });
 }
+
+window.addEventListener('unhandledrejection', function (event) {
+  if (event.reason === 'longjmp') {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+});
 
 const modulePromise = new Promise((resolve, reject) => {
   window.Module = {
