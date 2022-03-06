@@ -379,7 +379,38 @@ module Prism
       @@references[ruby_reference_id]
     end
 
-    def self.get_ruby_reference_type(prop_name, ruby_reference_id)
+    def self._get_ruby_property_type(value)
+      case value
+      when String
+        "string"
+      when Numeric
+        "number"
+      when NilClass
+        "null"
+      when TrueClass
+        "true"
+      when FalseClass
+        "false"
+      when JS::Value
+        "js_value"
+      when Object
+        "object"
+      else
+        fail "get_ruby_reference_type: #{value} not handled"
+      end
+    end
+
+    def self.get_ruby_reference_type(ruby_reference_id)
+      value = @@references[ruby_reference_id]
+
+      if value.respond_to?(:call)
+        return "method"
+      end
+
+      _get_ruby_property_type(value)
+    end
+
+    def self.get_ruby_reference_property_type(prop_name, ruby_reference_id)
       value = @@references[ruby_reference_id]
 
       if value.respond_to?(prop_name)
@@ -392,20 +423,7 @@ module Prism
         prop_name = prop_name_as_int
       end
 
-      case value[prop_name]
-      when String
-        "string"
-      when Numeric
-        "number"
-      when NilClass
-        "null"
-      when TrueClass
-        "true"
-      when FalseClass
-        "false"
-      else
-        fail "get_ruby_reference_type: #{prop_name} #{value[prop_name]} not handled"
-      end
+      _get_ruby_property_type(value[prop_name])
     end
 
     def self.get_ruby_reference_number(prop_name, ruby_reference_id)

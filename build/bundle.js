@@ -1446,34 +1446,34 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  213480: function() {return Prism.getWindowReference();},  
- 213519: function() {return Prism.getDocumentReference();},  
- 213560: function() {return Prism.getArgsReference();},  
- 213597: function() {return Prism.clearArgs();},  
- 213627: function($0, $1) {return Prism.setArgString($0, UTF8ToString($1));},  
- 213680: function($0, $1) {return Prism.setArgNumber($0, $1);},  
- 213719: function($0, $1) {return Prism.setArgValue($0, $1);},  
- 213757: function($0, $1) {return Prism.setArgCallback($0, $1);},  
- 213798: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},  
- 213871: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},  
- 213930: function($0, $1, $2) {return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);},  
- 214002: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), undefined);},  
- 214068: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), null);},  
- 214129: function($0, $1, $2) {return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);},  
- 214205: function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},  
- 214256: function($0, $1) {return Prism.callMethodReturningReference($0, $1);},  
- 214311: function($0) {return Prism.callConstructor($0);},  
- 214349: function($0) {return Prism.getValueNumber($0);},  
- 214386: function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},  
- 214444: function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},  
- 214692: function($0) {return Prism.getRubyReferenceId($0);},  
- 214733: function($0) {return Prism.makeCallbackReference($0);},  
- 214777: function($0) {return Prism.checkIfFunctionIsContructor($0);},  
- 214827: function() {return Prism.getArgCount();},  
- 214859: function($0) {return Prism.getArgNumber($0);},  
- 214894: function($0) {return Prism.getArgReference($0);},  
- 214932: function($0, $1, $2) {var selector = UTF8ToString($0); var eventName = UTF8ToString($1); var id = UTF8ToString($2); var elements; if (selector === 'document') { elements = [window.document]; } else if (selector === 'body') { elements = [window.document.body]; } else { elements = document.querySelectorAll(selector); } for (var i = 0; i < elements.length; i++) { var element = elements[i]; element.addEventListener(eventName, function(event) { Module.ccall( 'event', 'void', ['string', 'string', 'string'], [Prism.stringifyEvent(event), id] ); Prism.render(); }); };},  
- 215481: function($0) {return Prism.freeReference($0);}
+  213512: function() {return Prism.getWindowReference();},  
+ 213551: function() {return Prism.getDocumentReference();},  
+ 213592: function() {return Prism.getArgsReference();},  
+ 213629: function() {return Prism.clearArgs();},  
+ 213659: function($0, $1) {return Prism.setArgString($0, UTF8ToString($1));},  
+ 213712: function($0, $1) {return Prism.setArgNumber($0, $1);},  
+ 213751: function($0, $1) {return Prism.setArgValue($0, $1);},  
+ 213789: function($0, $1) {return Prism.setArgCallback($0, $1);},  
+ 213830: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},  
+ 213903: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},  
+ 213962: function($0, $1, $2) {return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);},  
+ 214034: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), undefined);},  
+ 214100: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), null);},  
+ 214161: function($0, $1, $2) {return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);},  
+ 214237: function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},  
+ 214288: function($0, $1) {return Prism.callMethodReturningReference($0, $1);},  
+ 214343: function($0) {return Prism.callConstructor($0);},  
+ 214381: function($0) {return Prism.getValueNumber($0);},  
+ 214418: function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},  
+ 214476: function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},  
+ 214724: function($0) {return Prism.getRubyReferenceId($0);},  
+ 214765: function($0) {return Prism.makeCallbackReference($0);},  
+ 214809: function($0) {return Prism.checkIfFunctionIsContructor($0);},  
+ 214859: function() {return Prism.getArgCount();},  
+ 214891: function($0) {return Prism.getArgNumber($0);},  
+ 214926: function($0) {return Prism.getArgReference($0);},  
+ 214964: function($0, $1, $2) {var selector = UTF8ToString($0); var eventName = UTF8ToString($1); var id = UTF8ToString($2); var elements; if (selector === 'document') { elements = [window.document]; } else if (selector === 'body') { elements = [window.document.body]; } else { elements = document.querySelectorAll(selector); } for (var i = 0; i < elements.length; i++) { var element = elements[i]; element.addEventListener(eventName, function(event) { Module.ccall( 'event', 'void', ['string', 'string', 'string'], [Prism.stringifyEvent(event), id] ); Prism.render(); }); };},  
+ 215513: function($0) {return Prism.freeReference($0);}
 };
 function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
 function get_arg_string_(index){ var string = Prism.getArgString(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
@@ -6674,6 +6674,11 @@ var _print_backtrace = Module["_print_backtrace"] = function() {
 /** @type {function(...*):?} */
 var _get_ruby_reference_type = Module["_get_ruby_reference_type"] = function() {
   return (_get_ruby_reference_type = Module["_get_ruby_reference_type"] = Module["asm"]["get_ruby_reference_type"]).apply(null, arguments);
+};
+
+/** @type {function(...*):?} */
+var _get_ruby_reference_property_type = Module["_get_ruby_reference_property_type"] = function() {
+  return (_get_ruby_reference_property_type = Module["_get_ruby_reference_property_type"] = Module["asm"]["get_ruby_reference_property_type"]).apply(null, arguments);
 };
 
 /** @type {function(...*):?} */

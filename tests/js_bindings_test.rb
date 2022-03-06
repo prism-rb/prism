@@ -234,6 +234,30 @@ class JSBindingsTest < Prism::Component
 
       assert_eq(window.sum([1, 2, 3]), 6)
     end
+
+    run_test "passing a hash to JS" do
+      window.eval <<~JS
+        window.getFoo = function (obj) {
+          return obj.foo;
+        }
+      JS
+
+      assert_eq(window.getFoo({"foo" => 5}), 5)
+    end
+
+    run_test "passing an array of JS items to JS" do
+      window.eval <<~JS
+        window.firstItemIsPromise = function (array) {
+          return array[0] instanceof Promise;
+        }
+      JS
+
+      promise = window.Promise!.new do |resolve, reject|
+        resolve.call
+      end
+
+      assert_eq(window.firstItemIsPromise([promise]), true)
+    end
   end
 end
 

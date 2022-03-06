@@ -1062,6 +1062,7 @@ function makeRubyValue(rubyReferenceId) {
     // call my current reference
     // just return a damn ruby value, worry about primitive promotion later
     callbackArgs = args;
+
     const newRubyReferenceId = Module.ccall(
       "call_ruby_value_returning_reference",
       "int",
@@ -1069,6 +1070,23 @@ function makeRubyValue(rubyReferenceId) {
       [rubyReferenceId]
     );
 
+    const rubyType = Module.ccall(
+      "get_ruby_reference_type",
+      "string",
+      ["int"],
+      [newRubyReferenceId]
+    );
+
+    if (rubyType === 'js_value') {
+      const jsReferenceId = Module.ccall(
+        "get_ruby_reference_number",
+        "float",
+        ["string", "int"],
+        ["value", rubyReferenceId]
+      );
+
+      return references.get(jsReferenceId);
+    }
 
     return makeRubyValue(newRubyReferenceId);
   }
@@ -1082,11 +1100,10 @@ function makeRubyValue(rubyReferenceId) {
       }
 
       if (prop === Symbol.iterator) {
-
         prop = "each";
 
         const rubyType = Module.ccall(
-          "get_ruby_reference_type",
+          "get_ruby_reference_property_type",
           "string",
           ["string", "int"],
           [prop, rubyReferenceId]
@@ -1112,7 +1129,7 @@ function makeRubyValue(rubyReferenceId) {
 
       return tryCatchThrow(() =>{
         const rubyType = Module.ccall(
-          "get_ruby_reference_type",
+          "get_ruby_reference_property_type",
           "string",
           ["string", "int"],
           [prop, rubyReferenceId]
@@ -1147,11 +1164,16 @@ function makeRubyValue(rubyReferenceId) {
           return true;
         } else if (rubyType === 'false') {
           return false;
+        } else if (rubyType === 'js_value') {
+          const jsReferenceIdString = Prism.eval(`
+            Prism::ExternalReferences.dereference(${rubyReferenceId})[${prop}]._reference.value
+          `);
+
+          return references.get(parseInt(jsReferenceIdString, 10));
         } else {
           throw new Error('unhandled ruby type: ' + rubyType);
         }
       })
-      // TODO - moar types
     },
   };
 

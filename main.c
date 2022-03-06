@@ -751,13 +751,32 @@ EXPORT void print_backtrace(char* msg) {
   mrb_print_backtrace(mrb);
 }
 
-EXPORT char* get_ruby_reference_type(char* prop_name, int ruby_reference_id) {
+EXPORT char* get_ruby_reference_type(int ruby_reference_id) {
   mrb_value value;
 
   value = mrb_funcall(
     mrb,
     mrb_obj_value(external_references),
     "get_ruby_reference_type",
+    1,
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return RSTRING_PTR(value);
+}
+
+EXPORT char* get_ruby_reference_property_type(char* prop_name, int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_reference_property_type",
     2,
     mrb_str_new_cstr(mrb, prop_name),
     mrb_int_value(mrb, ruby_reference_id)
