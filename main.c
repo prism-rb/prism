@@ -70,6 +70,13 @@ get_window_reference(mrb_state *mrb, mrb_value self){
 }
 
 mrb_value
+get_prism_bindings_reference(mrb_state *mrb, mrb_value self){
+  return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
+    return Prism.getPrismBindingsReference();
+  }));
+}
+
+mrb_value
 get_document_reference(mrb_state *mrb, mrb_value self){
   return mrb_reference(mrb, MAIN_THREAD_EM_ASM_INT({
     return Prism.getDocumentReference();
@@ -473,6 +480,14 @@ EXPORT int main(int argc, const char * argv[])
   mrb_define_method(mrb, js_reference_class, "to_i", mrb_reference_value, MRB_ARGS_REQ(0));
 
   binding_class = mrb_define_class(mrb, "InternalBindings", mrb->object_class);
+
+  mrb_define_class_method(
+    mrb,
+    binding_class,
+    "prism_bindings_reference",
+    get_prism_bindings_reference,
+    MRB_ARGS_REQ(0)
+  );
 
   mrb_define_class_method(
     mrb,

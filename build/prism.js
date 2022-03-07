@@ -1151,6 +1151,8 @@ function makeRubyValue(rubyReferenceId) {
           );
         } else if (rubyType === 'null') {
           return null;
+        } else if (rubyType === 'undefined') {
+          return undefined;
         } else if (rubyType === 'method') {
           const methodRubyReferenceId =  Module.ccall(
             "get_ruby_method_reference",
@@ -1198,7 +1200,7 @@ function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
 }
 
 function getReference(obj) {
-  if (obj == null) {
+  if (obj === null) {
     return 0;
   }
 
@@ -1215,6 +1217,10 @@ function freeReference(refId) {
 
 function getWindowReference() {
   return getReference(window);
+}
+
+function getPrismBindingsReference() {
+  return getReference(Prism);
 }
 
 function getDocumentReference() {
@@ -1394,6 +1400,7 @@ window.Prism = {
   render,
   stringifyEvent,
   getWindowReference,
+  getPrismBindingsReference,
   getDocumentReference,
   getArgsReference,
   getArgCount,
@@ -1406,7 +1413,12 @@ window.Prism = {
   getRubyReferenceId,
   checkIfFunctionIsContructor,
   require: prismRequire,
+  import: importJS,
 };
+
+function importJS(url) {
+  return import(url);
+}
 
 function render() {
   const rvtree = JSON.parse(Module.ccall("render", "string", []));
@@ -1444,7 +1456,7 @@ async function prismRequire(cb, ...paths) {
   cb();
 }
 
-require_regex = /require(_relative)?\s*\(?\s*['|"]([^'|"]+)/;
+const require_regex = /require(_relative)?\s*\(?\s*['|"]([^'|"]+)/;
 
 function transformModule(moduleText) {
   const lines = moduleText.split("\n");

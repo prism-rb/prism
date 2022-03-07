@@ -71,7 +71,7 @@ class JSBindingsTest < Prism::Component
       report_error(test, e)
     end
 
-    run_tests
+    window.setTimeout(method(:run_tests))
   end
 
   def run_tests
@@ -351,6 +351,30 @@ class JSBindingsTest < Prism::Component
       resolveA.call
       resolved = true
       resolveB.call
+    end
+
+    run_test "accessing a missing property on a ruby value from JS" do
+      window.eval <<~JS
+        window.getFoo = function (obj) {
+          return obj.foo;
+        }
+      JS
+
+      data = {}
+
+      assert_eq(window.getFoo(data), undefined)
+    end
+
+    run_test "accessing an out of bounds property on a ruby arrayk from JS" do
+      window.eval <<~JS
+        window.getThird = function (obj) {
+          return obj[2];
+        }
+      JS
+
+      data = []
+
+      assert_eq(window.getThird(data), undefined)
     end
   end
 end

@@ -387,6 +387,8 @@ module Prism
         "number"
       when NilClass
         "null"
+      when JS::Undefined
+        "undefined"
       when TrueClass
         "true"
       when FalseClass
@@ -423,7 +425,7 @@ module Prism
         prop_name = prop_name_as_int
       end
 
-      _get_ruby_property_type(value[prop_name])
+      _get_ruby_property_type(value.fetch(prop_name, JS.undefined))
     end
 
     def self.lookup_reference_prop_from_js_key(prop_name, reference_id)
@@ -435,7 +437,7 @@ module Prism
         prop_name = prop_name_as_int
       end
 
-      value[prop_name]
+      value.fetch(prop_name, JS.undefined)
     end
 
     def self.get_ruby_reference_number(prop_name, ruby_reference_id)
@@ -500,10 +502,18 @@ module JS
   CallbackInterface = Struct.new(:name, :options)
   TypeDef = Struct.new(:name, :types)
 
+  def self.import(moduleName)
+    JS::Global.Prism.import(moduleName)
+  end
+
   class Undefined
     def self.singleton
       @@instance ||= Undefined.new
     end
+  end
+
+  def self.undefined
+    JS::Undefined.singleton
   end
 
   class Value
@@ -548,7 +558,7 @@ module JS
       when "string"
         InternalBindings.get_value_string(reference.value)
       when "undefined"
-        JS::Undefined
+        JS.undefined
       when "boolean"
         value = InternalBindings.get_value_number(reference.value)
 
@@ -654,7 +664,13 @@ module JS
 
       reference = InternalBindings.get_value_reference(@reference.value, name.to_s)
 
-      return nil if reference.value == 0
+      if reference.value == 0
+        if args.length > 0
+          fail "#{self}.#{name} is not a function"
+        end
+
+        return nil
+      end
 
       type = InternalBindings.get_type_of(reference.value)
 
@@ -665,6 +681,10 @@ module JS
           call_function(reference, *args, &block)
         end
       else
+        if args.length > 0
+          fail "#{name} is not a function"
+        end
+
         self.class.translate_js_value(reference, type)
       end
     end
@@ -702,8 +722,12 @@ module JS
       end
 
       base.define_method(:undefined) do
-        JS::Global.undefined
+        JS.undefined
       end
+    end
+
+    def self.Prism
+      @@prism ||= JS::Value.new(reference: InternalBindings.prism_bindings_reference)
     end
 
     def self.window
@@ -712,10 +736,6 @@ module JS
 
     def self.document
       @@document ||= JS::Value.new(reference: InternalBindings.document_reference)
-    end
-
-    def self.undefined
-      JS::Undefined.singleton
     end
   end
 end
