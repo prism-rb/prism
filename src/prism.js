@@ -148,9 +148,9 @@ function tryCatchThrow(f) {
     if (e === "longjmp") {
       throw e;
     }
-    throw e;
     console.error(e);
     Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+    throw e;
   }
 }
 
@@ -316,10 +316,16 @@ function makeRubyValue(rubyReferenceId) {
           return false;
         } else if (rubyType === 'js_value') {
           const jsReferenceIdString = Prism.eval(`
-            Prism::ExternalReferences.dereference(${rubyReferenceId})[${prop}]._reference.value
+            Prism::ExternalReferences.get_js_value_reference_number(${JSON.stringify(prop, null, 2)}, ${rubyReferenceId})
           `);
 
           return references.get(parseInt(jsReferenceIdString, 10));
+        } else if (rubyType === "object") {
+          const newRubyReferenceId = Prism.eval(`
+            Prism::ExternalReferences.get_ruby_property_object(${JSON.stringify(prop)}, ${rubyReferenceId})
+          `);
+
+          return makeRubyValue(parseInt(newRubyReferenceId, 10));
         } else {
           throw new Error('unhandled ruby type: ' + rubyType);
         }

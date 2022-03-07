@@ -1,3 +1,4 @@
+
 class DOMExample < Prism::Component
   include JS::Global
 
@@ -30,4 +31,4 @@ class DOMExample < Prism::Component
   end
 end
 
-Prism.mount(DOMExample.new() {})
+DOMExample.new() {}

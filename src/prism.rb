@@ -426,8 +426,8 @@ module Prism
       _get_ruby_property_type(value[prop_name])
     end
 
-    def self.get_ruby_reference_number(prop_name, ruby_reference_id)
-      value = dereference(ruby_reference_id)
+    def self.lookup_reference_prop_from_js_key(prop_name, reference_id)
+      value = dereference(reference_id)
 
       prop_name_as_int = prop_name.to_i
 
@@ -435,19 +435,23 @@ module Prism
         prop_name = prop_name_as_int
       end
 
-      value[prop_name].to_f
+      value[prop_name]
+    end
+
+    def self.get_ruby_reference_number(prop_name, ruby_reference_id)
+      lookup_reference_prop_from_js_key(prop_name, ruby_reference_id).to_f
     end
 
     def self.get_ruby_reference_string(prop_name, ruby_reference_id)
-      value = dereference(ruby_reference_id)
+      lookup_reference_prop_from_js_key(prop_name, ruby_reference_id).to_s
+    end
 
-      prop_name_as_int = prop_name.to_i
+    def self.get_ruby_property_object(prop_name, ruby_reference_id)
+      get_ruby_reference(lookup_reference_prop_from_js_key(prop_name, ruby_reference_id))
+    end
 
-      if prop_name_as_int.to_s == prop_name
-        prop_name = prop_name_as_int
-      end
-
-      value[prop_name].to_s
+    def self.get_js_value_reference_number(prop_name, ruby_reference_id)
+      lookup_reference_prop_from_js_key(prop_name, ruby_reference_id)._reference.value
     end
 
     def self.get_ruby_method_reference(prop_name, ruby_reference_id)
@@ -508,6 +512,13 @@ module JS
       @reference = reference
     end
 
+    [:eval, :then].each do |method|
+      undef_method(method)
+      define_method(method) do |*args, &block|
+        method_missing(method, *args, &block)
+      end
+    end
+
     def new(*args, &block)
       JS::Value.send_args_to_js(*args, &block)
 
@@ -515,6 +526,7 @@ module JS
 
       JS::Value.translate_js_value(reference, InternalBindings.get_type_of(reference.value))
     end
+
 
     def _reference
       @reference
@@ -659,9 +671,6 @@ module JS
   end
 
   class Window < Value
-    def eval(*args, &block)
-      method_missing(:eval, *args, &block)
-    end
   end
 
   class Iterator

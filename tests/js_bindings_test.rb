@@ -3,13 +3,17 @@ class JSBindingsTest < Prism::Component
 
   def initialize
     @results = []
+    @tests = []
   end
 
   def run
     puts " "
 
     tests
+    run_tests
+  end
 
+  def report_results
     passes = @results.select { |result| result[:passed] }
     failures = @results.reject { |result| result[:passed] }
 
@@ -18,21 +22,81 @@ class JSBindingsTest < Prism::Component
     puts "Exit code: #{failures.length > 0 ? 1 : 0}"
   end
 
-  def run_test(name)
+  def report_success(test)
+    @results << result = {name: test[:name], passed: true}
+    puts " ✔ passed - #{test[:name]}"
+  end
+
+  def report_error(test, error)
+    @results << result = {name: test[:name], passed: false, error: error}
+    puts " ✖ failed! - #{test[:name]}"
+    puts " "
+    puts result[:error].inspect
+    result[:error].backtrace.each do |line|
+      puts "  " + line
+    end
+    puts " "
+  end
+
+  def run_test_async(test)
     begin
-      yield
-    rescue Exception => e
-      @results << result = {name: name, passed: false, error: e}
-      puts " ✖ failed! - #{name}"
-      puts " "
-      puts result[:error].inspect
-      result[:error].backtrace.each do |line|
-        puts "  " + line
+      timeoutId = window.setTimeout(-> {
+        begin
+          raise StandardError.new("Timeout error!")
+        rescue StandardError => e
+          report_error(test, e)
+        end
+      }, 1000)
+
+      test[:block].call ->*args do
+        if args.length > 1
+          report_error(test, args.first)
+        else
+          report_success(test)
+          window.clearTimeout(timeoutId)
+        end
+
+        window.setTimeout(method(:run_tests))
       end
-      puts " "
+    rescue Exception => e
+      report_error(test, e)
+    end
+  end
+
+  def run_test_sync(test)
+    begin
+      test[:block].call
+      report_success(test)
+    rescue Exception => e
+      report_error(test, e)
+    end
+
+    run_tests
+  end
+
+  def run_tests
+    return report_results if @tests.empty?
+
+    test = @tests.shift
+
+    async = test[:async]
+
+    if async
+      run_test_async(test)
     else
-      @results << result = {name: name, passed: true}
-      puts " ✔ passed - #{name}"
+      run_test_sync(test)
+    end
+  end
+
+  def run_test(name, &block)
+    @tests << {name: name, block: block, async: block.arity == 1}
+  end
+
+  def _run_test(name, &block)
+    begin
+      block.call
+    rescue Exception => e
+    else
     end
   end
 
@@ -257,6 +321,36 @@ class JSBindingsTest < Prism::Component
       end
 
       assert_eq(window.firstItemIsPromise([promise]), true)
+    end
+
+    run_test "passing an array of promises to JS" do |done|
+      makePromise = -> do
+        result = nil
+
+        promise = window.Promise!.new do |resolve, reject|
+          result = resolve
+        end
+
+        [promise, result]
+      end
+
+      promiseA, resolveA = makePromise.call
+      promiseB, resolveB = makePromise.call
+      resolved = false
+
+      allPromise = window.Promise!.all([
+        promiseA,
+        promiseB
+      ])
+
+      allPromise.then do
+        fail "out of order resolution" unless resolved
+        done.call
+      end
+
+      resolveA.call
+      resolved = true
+      resolveB.call
     end
   end
 end
