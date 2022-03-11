@@ -19,6 +19,6 @@ For more information check out the docs on the github repo.
 
   s.files += Dir.glob("src/*.rb")
   s.files += Dir.glob("build/*")
-  s.homepage    = 'https://github.com/prism/prism-rb'
+  s.homepage    = 'https://github.com/prism-rb/prism'
   s.license     = 'MIT'
 end
