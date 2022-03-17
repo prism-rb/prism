@@ -376,6 +376,34 @@ class JSBindingsTest < Prism::Component
 
       assert_eq(window.getThird(data), undefined)
     end
+
+    run_test "JS setting a property on a ruby object" do
+      window.eval <<~JS
+        window.setFoo = function (obj) {
+          obj.foo = "bar"
+        }
+      JS
+
+      data = {}
+
+      window.setFoo(data)
+
+      assert_eq(data["foo"], "bar")
+    end
+
+    run_test "JS setting a property on a ruby array" do
+      window.eval <<~JS
+        window.setFirst = function (obj, val) {
+          obj[0] = "bar"
+        }
+      JS
+
+      data = []
+
+      window.setFirst(data)
+
+      assert_eq(data[0], "bar")
+    end
   end
 end
 

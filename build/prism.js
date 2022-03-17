@@ -1094,7 +1094,17 @@ function makeRubyValue(rubyReferenceId) {
   value[RUBY_VALUE] = rubyReferenceId;
 
   const proxyMethods = {
-    get: function (obj, prop) {
+    set: function setPropertyOnRubyValue (obj, prop, value) {
+      const jsValue = getReference(value);
+
+      Prism.eval(`
+        Prism::ExternalReferences.set_ruby_value_property(${rubyReferenceId}, ${JSON.stringify(prop, null, 2)}, ${jsValue})
+      `);
+
+      // TODO - we should have a bool result to indicate sucess
+      return true;
+    },
+    get: function getPropertyOnRubyValue (obj, prop) {
       if (prop === RUBY_VALUE) {
         return obj[prop];
       }

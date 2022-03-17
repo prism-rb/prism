@@ -419,13 +419,36 @@ module Prism
         return "method"
       end
 
+      begin
+
+      prop_name_as_int = prop_name.to_i
+
+        if prop_name_as_int.to_s == prop_name
+          prop_name = prop_name_as_int
+        end
+
+      rescue ArgumentError
+      end
+
+      begin
+        _get_ruby_property_type(value.fetch(prop_name, JS.undefined))
+      rescue ArgumentError, NoMethodError
+        "undefined"
+      end
+    end
+
+    def self.set_ruby_value_property(ruby_reference_id, prop_name, js_reference_id)
+      js_reference = JSReference.new(js_reference_id)
+      value = @@references[ruby_reference_id]
+
       prop_name_as_int = prop_name.to_i
 
       if prop_name_as_int.to_s == prop_name
         prop_name = prop_name_as_int
       end
 
-      _get_ruby_property_type(value.fetch(prop_name, JS.undefined))
+      type = InternalBindings.get_type_of(js_reference.value)
+      value[prop_name] = JS::Value.translate_js_value(js_reference, type)
     end
 
     def self.lookup_reference_prop_from_js_key(prop_name, reference_id)
