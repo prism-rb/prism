@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.com/prism-rb/prism.svg?branch=master)](https://travis-ci.com/prism-rb/prism)
 [![Financial Contributors on Open Collective](https://opencollective.com/prism/all/badge.svg?label=financial+contributors)](https://opencollective.com/prism) [![Join the chat at https://gitter.im/prism-rb/community](https://badges.gitter.im/prism-rb/community.svg)](https://gitter.im/prism-rb/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Build frontend web apps with Ruby and WebAssembly 
+Build frontend web apps with Ruby and WebAssembly
 
 ### Introduction
 
@@ -31,7 +31,7 @@ Building production releases of Prism apps through the command line is still a w
 
 Prism apps are written in mruby. mruby is a lightweight implementation of Ruby that's suitable for compiling to the web.
 
-mruby is similar in many ways to cruby and will be a familiar experience for someone who has only used the mainline interpreter. The most notable exception is that mruby only supports syntax up to ruby 1.9, which means there are no keyword arguments or safe traversal operator.
+mruby is similar in many ways to cruby and will be a familiar experience for someone who has only used the mainline interpreter.
 
 There are a number of other small differences, and it's worth reviewing the [mruby limitations documentation](https://github.com/mruby/mruby/blob/master/doc/limitations.md). You might also want to refer to the [mruby API docs](http://mruby.org/docs/api/).
 
@@ -163,7 +163,7 @@ Arguments:
 ##### `#call(method_name, *arguments)`
 
 Arguments:
-  
+
   - `method_name` *symbol* - The name of the method to call when the event occurs. Returns a `Prism::EventHandler`.
   - `*arguments` *any, variadic* - You can provide arguments that will be passed to the method after the method name. Please note any argument currently needs to be serializable, this will change in future.
 
