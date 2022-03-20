@@ -9,7 +9,6 @@ var patch = snabbdom.init([
 ]);
 var snabbdom_h = require("snabbdom/h").default;
 
-
 function stringifyEvent(e) {
   const obj = {};
   for (let k in e) {
@@ -207,8 +206,16 @@ function setObjectValueFromReference(reference, name, valueReference) {
   });
 }
 
-function makeRubyValue(rubyReferenceId) {
-  function value (...args) {
+function makeInnerRubyValue(rubyReferenceId, rubyType) {
+  if (rubyType === "array") {
+    return [];
+  }
+
+  if (rubyType === "object") {
+    return {};
+  }
+
+  return function value(...args) {
     // call my current reference
     // just return a damn ruby value, worry about primitive promotion later
     callbackArgs = args;
@@ -227,7 +234,7 @@ function makeRubyValue(rubyReferenceId) {
       [newRubyReferenceId]
     );
 
-    if (rubyType === 'js_value') {
+    if (rubyType === "js_value") {
       const jsReferenceId = Module.ccall(
         "get_ruby_reference_number",
         "float",
@@ -239,22 +246,37 @@ function makeRubyValue(rubyReferenceId) {
     }
 
     return makeRubyValue(newRubyReferenceId);
-  }
+  };
+}
+
+function makeRubyValue(rubyReferenceId) {
+  const rubyType = Module.ccall(
+    "get_ruby_reference_type",
+    "string",
+    ["int"],
+    [rubyReferenceId]
+  );
+
+  const value = makeInnerRubyValue(rubyReferenceId, rubyType);
 
   value[RUBY_VALUE] = rubyReferenceId;
 
   const proxyMethods = {
-    set: function setPropertyOnRubyValue (obj, prop, value) {
+    set: function setPropertyOnRubyValue(obj, prop, value) {
       const jsValue = getReference(value);
 
       Prism.eval(`
-        Prism::ExternalReferences.set_ruby_value_property(${rubyReferenceId}, ${JSON.stringify(prop, null, 2)}, ${jsValue})
+        Prism::ExternalReferences.set_ruby_value_property(${rubyReferenceId}, ${JSON.stringify(
+        prop,
+        null,
+        2
+      )}, ${jsValue})
       `);
 
       // TODO - we should have a bool result to indicate sucess
       return true;
     },
-    get: function getPropertyOnRubyValue (obj, prop) {
+    get: function getPropertyOnRubyValue(obj, prop) {
       if (prop === RUBY_VALUE) {
         return obj[prop];
       }
@@ -269,8 +291,10 @@ function makeRubyValue(rubyReferenceId) {
           [prop, rubyReferenceId]
         );
 
-        if (rubyType !== 'method') {
-          throw new Error('Ruby value does not implement #each and cannot be iterated');
+        if (rubyType !== "method") {
+          throw new Error(
+            "Ruby value does not implement #each and cannot be iterated"
+          );
         }
 
         const iteratorReference = Module.ccall(
@@ -287,67 +311,123 @@ function makeRubyValue(rubyReferenceId) {
         return {}[Symbol.toPrimitive];
       }
 
-      return tryCatchThrow(() =>{
-        const rubyType = Module.ccall(
-          "get_ruby_reference_property_type",
-          "string",
-          ["string", "int"],
-          [prop, rubyReferenceId]
-        );
-
-        if (rubyType === 'number') {
-          return Module.ccall(
-            "get_ruby_reference_number",
-            "float",
-            ["string", "int"],
-            [prop, rubyReferenceId]
-          );
-        } else if (rubyType === 'string') {
-          return Module.ccall(
-            "get_ruby_reference_string",
-            "string",
-            ["string", "int"],
-            [prop, rubyReferenceId]
-          );
-        } else if (rubyType === 'null') {
-          return null;
-        } else if (rubyType === 'undefined') {
-          return undefined;
-        } else if (rubyType === 'method') {
-          const methodRubyReferenceId =  Module.ccall(
-            "get_ruby_method_reference",
-            "int",
-            ["string", "int"],
-            [prop, rubyReferenceId]
-          );
-
-          return makeRubyValue(methodRubyReferenceId);
-        } else if (rubyType === 'true') {
-          return true;
-        } else if (rubyType === 'false') {
-          return false;
-        } else if (rubyType === 'js_value') {
-          const jsReferenceIdString = Prism.eval(`
-            Prism::ExternalReferences.get_js_value_reference_number(${JSON.stringify(prop, null, 2)}, ${rubyReferenceId})
-          `);
-
-          return references.get(parseInt(jsReferenceIdString, 10));
-        } else if (rubyType === "object") {
-          const newRubyReferenceId = Prism.eval(`
-            Prism::ExternalReferences.get_ruby_property_object(${JSON.stringify(prop)}, ${rubyReferenceId})
-          `);
-
-          return makeRubyValue(parseInt(newRubyReferenceId, 10));
-        } else {
-          throw new Error('unhandled ruby type: ' + rubyType);
-        }
-      })
+      return accessProperty(rubyValue, rubyReferenceId, rubyType, prop);
     },
   };
 
   const rubyValue = new Proxy(value, proxyMethods);
   registry.register(rubyValue, rubyReferenceId);
   return rubyValue;
+}
+
+function accessProperty(value, rubyReferenceId, rubyType, prop) {
+  return tryCatchThrow(() => {
+    const propertyRubyType = Module.ccall(
+      "get_ruby_reference_property_type",
+      "string",
+      ["string", "int"],
+      [prop, rubyReferenceId]
+    );
+
+    if (rubyType === "array" && prop === "length") {
+      callbackArgs = [];
+
+      const methodRubyReferenceId = Module.ccall(
+        "get_ruby_method_reference",
+        "int",
+        ["string", "int"],
+        [prop, rubyReferenceId]
+      );
+
+      const resultReferenceId = Module.ccall(
+        "call_ruby_value_returning_reference",
+        "int",
+        ["int"],
+        [methodRubyReferenceId]
+      );
+
+      const result = Module.ccall(
+        "get_ruby_reference_as_int",
+        "float",
+        ["int"],
+        [resultReferenceId]
+      );
+
+      cleanupReference(methodRubyReferenceId);
+      cleanupReference(resultReferenceId);
+
+      return result;
+    }
+
+    if (propertyRubyType === "number") {
+      return Module.ccall(
+        "get_ruby_reference_number",
+        "float",
+        ["string", "int"],
+        [prop, rubyReferenceId]
+      );
+    }
+
+    if (propertyRubyType === "string") {
+      return Module.ccall(
+        "get_ruby_reference_string",
+        "string",
+        ["string", "int"],
+        [prop, rubyReferenceId]
+      );
+    }
+
+    if (propertyRubyType === "null") {
+      return null;
+    }
+
+    if (propertyRubyType === "undefined") {
+      return undefined;
+    }
+
+    if (propertyRubyType === "method") {
+      const methodRubyReferenceId = Module.ccall(
+        "get_ruby_method_reference",
+        "int",
+        ["string", "int"],
+        [prop, rubyReferenceId]
+      );
+
+      return makeRubyValue(methodRubyReferenceId);
+    }
+
+    if (propertyRubyType === "true") {
+      return true;
+    }
+
+    if (propertyRubyType === "false") {
+      return false;
+    }
+
+    if (propertyRubyType === "js_value") {
+      const jsReferenceIdString = Prism.eval(`
+        Prism::ExternalReferences.get_js_value_reference_number(${JSON.stringify(
+          prop,
+          null,
+          2
+        )}, ${rubyReferenceId})
+      `);
+
+      return references.get(parseInt(jsReferenceIdString, 10));
+    }
+
+    if (propertyRubyType === "object" || propertyRubyType === "array") {
+      const newRubyReferenceId = Prism.eval(`
+        Prism::ExternalReferences.get_ruby_property_object(${JSON.stringify(
+          prop
+        )}, ${rubyReferenceId})
+      `);
+
+      return makeRubyValue(parseInt(newRubyReferenceId, 10));
+    }
+
+    throw new Error("unhandled ruby type: " + propertyRubyType);
+  });
 }
 
 function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
@@ -686,8 +766,8 @@ function load(modulesToLoad, main, config = {}) {
   });
 }
 
-window.addEventListener('unhandledrejection', function (event) {
-  if (event.reason === 'longjmp') {
+window.addEventListener("unhandledrejection", function (event) {
+  if (event.reason === "longjmp") {
     event.preventDefault();
     event.stopPropagation();
   }

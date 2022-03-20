@@ -25,7 +25,7 @@ puts "Compiling to Wasm..."
     -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
     -s WASM=1 \
     -Oz \
-    -g4 \
+    -gsource-map \
     --source-map-base $PWD/build \
     -I #{__dir__}/../mruby/include \
     main.c \

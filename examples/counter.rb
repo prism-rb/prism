@@ -1,9 +1,41 @@
-class Counter < Prism::Component
+class SnabbdomComponent
+  def initialize
+    JS.import("https://cdn.skypack.dev/snabbdom").then do |snabbdom|
+      @snabbdom = snabbdom
+      p @snabbdom
+      window.snabbdom = @snabbdom
+
+      @patch = snabbdom.init([
+        @snabbdom.classModule,
+        @snabbdom.propsModule,
+        @snabbdom.attributesModule,
+        @snabbdom.styleModule,
+        @snabbdom.eventListenersModule,
+      ])
+
+      @container = document.body
+
+      update_vdom
+    end
+  end
+
+  def update_vdom
+    vdom = render
+
+    @patch.call(nil, @container, vdom.stringify_keys)
+
+    @container = vdom
+  end
+end
+
+class Counter < SnabbdomComponent
   include JS::Global
 
   attr_reader :count
 
   def initialize(count, &remove)
+    super()
+
     @initial_count = count
     @count = count
     @remove = remove
@@ -11,6 +43,7 @@ class Counter < Prism::Component
 
   def change(amount)
     @count += amount
+    update_vdom
   end
 
   def reset
@@ -22,14 +55,12 @@ class Counter < Prism::Component
   end
 
   def render
-    div(".counter", {}, [
-      div("", {}, [count.to_s]),
-      button({:onClick => call(:change).with(+1)}, [text("+")]),
-      button({:onClick => call(:change).with(-1)}, [text("-")]),
-      button({:onClick => call(:reset)}, [text("Reset")]),
-      button({:onClick => call(:remove)}, [text("Delete")]),
+    @snabbdom.h("div.counter", {}, [
+      @snabbdom.h("button", {on: {click: -> { change(1) }}}, "+"),
+      @snabbdom.h("button", "-"),
+      "Count: #{@count}"
     ])
   end
 end
 
-Prism.mount(Counter.new(0) {})
+Counter.new(0)

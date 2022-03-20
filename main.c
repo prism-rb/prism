@@ -903,6 +903,25 @@ EXPORT int call_ruby_value_returning_reference(int ruby_reference_id) {
   return mrb_integer(value);
 }
 
+EXPORT int get_ruby_reference_as_int(int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_reference_as_int",
+    1,
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return mrb_integer(value);
+}
+
 
 EXPORT int load(char* main, char* config) {
   const char* class_name;

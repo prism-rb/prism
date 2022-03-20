@@ -395,6 +395,10 @@ module Prism
         "false"
       when JS::Value
         "js_value"
+      when Array
+        "array"
+      when Proc, Method
+        "method"
       when Object
         "object"
       else
@@ -505,6 +509,10 @@ module Prism
       end
 
       Prism::ExternalReferences.get_ruby_reference(callable.call(*args.slice(0...callable.parameters.size)))
+    end
+
+    def self.get_ruby_reference_as_int(ruby_reference_id)
+      dereference(ruby_reference_id).to_i
     end
   end
 end

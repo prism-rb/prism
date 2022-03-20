@@ -112,10 +112,6 @@ class JSBindingsTest < Prism::Component
     fail "Assertion error: Expected `#{a.inspect}` to eq `#{b.inspect}`" unless a == b
   end
 
-  def render
-    div("", {}, [ ])
-  end
-
   def tests
     run_test "window is accessible" do
       assert window.is_a?(JS::Value)
@@ -403,6 +399,41 @@ class JSBindingsTest < Prism::Component
       window.setFirst(data)
 
       assert_eq(data[0], "bar")
+    end
+
+    run_test "ruby objects have a typeof object" do
+      window.eval <<~JS
+        window.typeOf = function (obj) {
+          return typeof obj;
+        }
+      JS
+
+      assert_eq(window.typeOf({}), "object")
+    end
+
+    run_test "ruby procs have a typeof function" do
+      window.eval <<~JS
+        window.typeOf = function (obj) {
+          return typeof obj;
+        }
+      JS
+
+      assert_eq(window.typeOf(-> {}), "function")
+    end
+
+    run_test "ruby arrays are recognized by Array.isArray" do
+      assert_eq(window.Array!.isArray([]), true)
+    end
+
+    run_test "ruby arrays have a length property in JS" do
+      window.eval <<~JS
+        window.assertLengthIsThree = function (obj) {
+          return obj.length === 3;
+        }
+      JS
+
+      assert_eq(window.assertLengthIsThree([:a, :b, :c]), true)
+      assert_eq(window.assertLengthIsThree([]), false)
     end
   end
 end

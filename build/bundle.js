@@ -1446,35 +1446,35 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  213544: function() {return Prism.getWindowReference();},  
- 213583: function() {return Prism.getPrismBindingsReference();},  
- 213629: function() {return Prism.getDocumentReference();},  
- 213670: function() {return Prism.getArgsReference();},  
- 213707: function() {return Prism.clearArgs();},  
- 213737: function($0, $1) {return Prism.setArgString($0, UTF8ToString($1));},  
- 213790: function($0, $1) {return Prism.setArgNumber($0, $1);},  
- 213829: function($0, $1) {return Prism.setArgValue($0, $1);},  
- 213867: function($0, $1) {return Prism.setArgCallback($0, $1);},  
- 213908: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},  
- 213981: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},  
- 214040: function($0, $1, $2) {return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);},  
- 214112: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), undefined);},  
- 214178: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), null);},  
- 214239: function($0, $1, $2) {return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);},  
- 214315: function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},  
- 214366: function($0, $1) {return Prism.callMethodReturningReference($0, $1);},  
- 214421: function($0) {return Prism.callConstructor($0);},  
- 214459: function($0) {return Prism.getValueNumber($0);},  
- 214496: function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},  
- 214554: function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},  
- 214802: function($0) {return Prism.getRubyReferenceId($0);},  
- 214843: function($0) {return Prism.makeCallbackReference($0);},  
- 214887: function($0) {return Prism.checkIfFunctionIsContructor($0);},  
- 214937: function() {return Prism.getArgCount();},  
- 214969: function($0) {return Prism.getArgNumber($0);},  
- 215004: function($0) {return Prism.getArgReference($0);},  
- 215042: function($0, $1, $2) {var selector = UTF8ToString($0); var eventName = UTF8ToString($1); var id = UTF8ToString($2); var elements; if (selector === 'document') { elements = [window.document]; } else if (selector === 'body') { elements = [window.document.body]; } else { elements = document.querySelectorAll(selector); } for (var i = 0; i < elements.length; i++) { var element = elements[i]; element.addEventListener(eventName, function(event) { Module.ccall( 'event', 'void', ['string', 'string', 'string'], [Prism.stringifyEvent(event), id] ); Prism.render(); }); };},  
- 215591: function($0) {return Prism.freeReference($0);}
+  213560: function() {return Prism.getWindowReference();},  
+ 213599: function() {return Prism.getPrismBindingsReference();},  
+ 213645: function() {return Prism.getDocumentReference();},  
+ 213686: function() {return Prism.getArgsReference();},  
+ 213723: function() {return Prism.clearArgs();},  
+ 213753: function($0, $1) {return Prism.setArgString($0, UTF8ToString($1));},  
+ 213806: function($0, $1) {return Prism.setArgNumber($0, $1);},  
+ 213845: function($0, $1) {return Prism.setArgValue($0, $1);},  
+ 213883: function($0, $1) {return Prism.setArgCallback($0, $1);},  
+ 213924: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},  
+ 213997: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},  
+ 214056: function($0, $1, $2) {return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);},  
+ 214128: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), undefined);},  
+ 214194: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), null);},  
+ 214255: function($0, $1, $2) {return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);},  
+ 214331: function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},  
+ 214382: function($0, $1) {return Prism.callMethodReturningReference($0, $1);},  
+ 214437: function($0) {return Prism.callConstructor($0);},  
+ 214475: function($0) {return Prism.getValueNumber($0);},  
+ 214512: function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},  
+ 214570: function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},  
+ 214818: function($0) {return Prism.getRubyReferenceId($0);},  
+ 214859: function($0) {return Prism.makeCallbackReference($0);},  
+ 214903: function($0) {return Prism.checkIfFunctionIsContructor($0);},  
+ 214953: function() {return Prism.getArgCount();},  
+ 214985: function($0) {return Prism.getArgNumber($0);},  
+ 215020: function($0) {return Prism.getArgReference($0);},  
+ 215058: function($0, $1, $2) {var selector = UTF8ToString($0); var eventName = UTF8ToString($1); var id = UTF8ToString($2); var elements; if (selector === 'document') { elements = [window.document]; } else if (selector === 'body') { elements = [window.document.body]; } else { elements = document.querySelectorAll(selector); } for (var i = 0; i < elements.length; i++) { var element = elements[i]; element.addEventListener(eventName, function(event) { Module.ccall( 'event', 'void', ['string', 'string', 'string'], [Prism.stringifyEvent(event), id] ); Prism.render(); }); };},  
+ 215607: function($0) {return Prism.freeReference($0);}
 };
 function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
 function get_arg_string_(index){ var string = Prism.getArgString(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
@@ -6705,6 +6705,11 @@ var _get_ruby_iterator_reference = Module["_get_ruby_iterator_reference"] = func
 /** @type {function(...*):?} */
 var _call_ruby_value_returning_reference = Module["_call_ruby_value_returning_reference"] = function() {
   return (_call_ruby_value_returning_reference = Module["_call_ruby_value_returning_reference"] = Module["asm"]["call_ruby_value_returning_reference"]).apply(null, arguments);
+};
+
+/** @type {function(...*):?} */
+var _get_ruby_reference_as_int = Module["_get_ruby_reference_as_int"] = function() {
+  return (_get_ruby_reference_as_int = Module["_get_ruby_reference_as_int"] = Module["asm"]["get_ruby_reference_as_int"]).apply(null, arguments);
 };
 
 /** @type {function(...*):?} */
