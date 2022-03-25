@@ -1,7 +1,6 @@
 
 ## Prism
 
-[![Join the chat at https://gitter.im/prism-rb/community](https://badges.gitter.im/prism-rb/community.svg)](https://gitter.im/prism-rb/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.com/prism-rb/prism.svg?branch=master)](https://travis-ci.com/prism-rb/prism)
 [![Financial Contributors on Open Collective](https://opencollective.com/prism/all/badge.svg?label=financial+contributors)](https://opencollective.com/prism) [![Join the chat at https://gitter.im/prism-rb/community](https://badges.gitter.im/prism-rb/community.svg)](https://gitter.im/prism-rb/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
