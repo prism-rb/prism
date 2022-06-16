@@ -30,7 +30,7 @@ const proxy = http.createServer((req, res) => {
   }
 
   if (p.startsWith('prism-ruby')) {
-    p = path.join(__dirname, 'src', path.basename(p));
+    p = path.join(__dirname, 'src', 'rb', path.basename(p));
   }
 
   if (isDirectory(p)) {

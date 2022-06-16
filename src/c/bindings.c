@@ -428,44 +428,6 @@ get_arg_class_name(mrb_state *mrb, mrb_value self) {
   return return_str;
 }
 
-
-mrb_value
-add_event_listener(mrb_state *mrb, mrb_value self){
-  mrb_value selector, event, id;
-  mrb_get_args(mrb, "SSS", &selector, &event, &id);
-
-  MAIN_THREAD_EM_ASM({
-    var selector = UTF8ToString($0);
-    var eventName = UTF8ToString($1);
-    var id = UTF8ToString($2);
-    var elements;
-
-    if (selector === 'document') {
-      elements = [window.document];
-    } else if (selector === 'body') {
-      elements = [window.document.body];
-    } else {
-      elements = document.querySelectorAll(selector);
-    }
-
-    for (var i = 0; i < elements.length; i++) {
-      var element = elements[i];
-
-      element.addEventListener(eventName, function(event) {
-        Module.ccall(
-          'event',
-          'void',
-          ['string', 'string', 'string'],
-          [Prism.stringifyEvent(event), id]
-        );
-
-        Prism.render();
-      });
-    };
-  }, RSTRING_PTR(selector), RSTRING_PTR(event), RSTRING_PTR(id));
-  return mrb_nil_value();
-}
-
 EXPORT int main(int argc, const char * argv[])
 {
   struct RClass *dom_class, *binding_class;
@@ -727,14 +689,6 @@ EXPORT int main(int argc, const char * argv[])
   );
 
   if (!mrb) { /* handle error */ }
-  dom_class = mrb_define_class(mrb, "InternalDOM", mrb->object_class);
-  mrb_define_class_method(
-    mrb,
-    dom_class,
-    "add_event_listener",
-    add_event_listener,
-    MRB_ARGS_REQ(3)
-  );
 
   return 0;
 }

@@ -305,41 +305,6 @@ module Prism
   end
 end
 
-module DOM
-  @@event_id = 0
-  @@listeners = {}
-
-  def self.get_event_id
-    @@event_id += 1
-
-    @@event_id.to_s
-  end
-
-  def self.add_listener(id, &block)
-    @@listeners[id] = block
-  end
-
-  def self.select(selector)
-    ElementSelection.new(selector)
-  end
-
-  def self.event(eventData, id)
-    @@listeners[id].call(eventData)
-  end
-
-  class ElementSelection
-    def initialize(selector)
-      @selector = selector
-    end
-
-    def on(eventName, &block)
-      id = DOM.get_event_id
-      InternalDOM.add_event_listener(@selector, eventName, id)
-      DOM.add_listener(id, &block)
-    end
-  end
-end
-
 module Prism
   class ExternalReferences
     @@reference_id = 0

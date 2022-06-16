@@ -848,802 +848,496 @@ exports.vnode = vnode;
 exports.default = vnode;
 
 },{}],13:[function(require,module,exports){
-var snabbdom = require("snabbdom");
-var patch = snabbdom.init([
-  require("snabbdom/modules/class").default,
-  require("snabbdom/modules/attributes").default,
-  require("snabbdom/modules/props").default,
-  require("snabbdom/modules/style").default,
-  require("snabbdom/modules/eventlisteners").default,
-  require("snabbdom/modules/dataset").default,
-]);
-var snabbdom_h = require("snabbdom/h").default;
-
-function stringifyEvent(e) {
-  const obj = {};
-  for (let k in e) {
-    obj[k] = e[k];
-  }
-  return JSON.stringify(
-    obj,
-    (k, v) => {
-      if (v instanceof Node) return "Node";
-      if (v instanceof Window) return "Window";
-      return v;
-    },
-    " "
-  );
-}
-
-function rubyVTreeToSnabbdom(rvtree) {
-  if (rvtree.type === "text") {
-    return rvtree.content;
-  }
-
-  let options = {};
-
-  for (let key in rvtree) {
-    if (key === "_children") {
-      continue;
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
     }
-    if (key === "_type") {
-      continue;
-    }
-    if (key === "_class") {
-      continue;
-    }
-    if (key === "onClick") {
-      continue;
-    }
-    if (key === "onKeydown") {
-      continue;
-    }
-    if (key === "onInput") {
-      continue;
-    }
-
-    options[key] = rvtree[key];
-  }
-
-  if (options.on) {
-    for (let key in options.on) {
-      var handler = options.on[key];
-
-      options.on[key] = function (event) {
-        if (handler.prevent_default) {
-          event.preventDefault();
-        }
-
-        if (handler.stop_propagation) {
-          event.stopPropagation();
-        }
-
-        let args = [];
-
-        for (let arg of handler.args) {
-          if (arg.type === "event") {
-            args.push(serializeEvent(event));
-          }
-
-          if (arg.type === "event_data") {
-            args.push(event[arg.key]);
-          }
-
-          if (arg.type === "target_data") {
-            args.push(event.target[arg.key]);
-          }
-        }
-
-        var handlerWithArgs = Object.assign({}, handler, { args });
-
-        if (handlerWithArgs.type) {
-          Module.ccall(
-            "dispatch",
-            "void",
-            ["string"],
-            [JSON.stringify(handlerWithArgs)]
-          );
-        }
-        render();
-      };
-    }
-  }
-
-  return snabbdom_h(
-    rvtree._type + (rvtree._class || ""),
-    options,
-    (rvtree._children || []).map(rubyVTreeToSnabbdom)
-  );
-}
-
-var currentContainer;
-var allLoaded = false;
-var modulesToLoad = [];
-
-function run(element, main, config = {}) {
-  currentContainer = element;
-  modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
-
-  load(modulesToLoad, main, config);
-}
-
-let _refId = 1;
-
-const references = new Map();
-let args = [];
-
-function clearArgs() {
-  args.splice(0, args.length);
-}
-
-function setArgString(index, value) {
-  args[index] = value;
-}
-
-function setArgNumber(index, value) {
-  args[index] = value;
-}
-
-const RUBY_VALUE = Symbol("RUBY_VALUE");
-
-let callbackArgs = [];
-
-const registry = new FinalizationRegistry(cleanupReference);
-
-function tryCatchThrow(f) {
-  try {
-    return f();
-  } catch (e) {
-    if (e === "longjmp") {
-      throw e;
-    }
-    console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
-    throw e;
-  }
-}
-
-function cleanupReference(reference) {
-  Module.ccall("cleanup_reference", "void", ["int"], [reference]);
-}
-
-function makeCallbackReference(callbackReference) {
-  function callbackHandler(...args) {
-    callbackArgs = args;
-    Module.ccall("handle_callback", "void", ["int"], [callbackReference]);
-  }
-
-  callbackHandler[RUBY_VALUE] = callbackReference;
-
-  registry.register(callbackHandler, callbackReference);
-
-  return getReference(callbackHandler);
-}
-
-function setArgCallback(index, reference) {
-  function callbackHandler(...args) {
-    callbackArgs = args;
-    Module.ccall("handle_callback", "void", ["int"], [reference]);
-  }
-
-  args[index] = callbackHandler;
-
-  registry.register(callbackHandler, reference);
-}
-
-function setArgValue(index, reference) {
-  const referenceValue = references.get(reference);
-
-  tryCatchThrow(() => {
-    args[index] = referenceValue;
-  });
-}
-
-function setObjectValue(reference, name, value) {
-  const referenceValue = references.get(reference);
-
-  tryCatchThrow(() => {
-    referenceValue[name] = value;
-  });
-}
-
-function setObjectValueFromReference(reference, name, valueReference) {
-  const obj = references.get(reference);
-  const value = references.get(valueReference);
-
-  tryCatchThrow(() => {
-    obj[name] = value;
-  });
-}
-
-function makeInnerRubyValue(rubyReferenceId, rubyType) {
-  if (rubyType === "array") {
-    return [];
-  }
-
-  if (rubyType === "object") {
-    return {};
-  }
-
-  return function value(...args) {
-    // call my current reference
-    // just return a damn ruby value, worry about primitive promotion later
-    callbackArgs = args;
-
-    const newRubyReferenceId = Module.ccall(
-      "call_ruby_value_returning_reference",
-      "int",
-      ["int"],
-      [rubyReferenceId]
-    );
-
-    const rubyType = Module.ccall(
-      "get_ruby_reference_type",
-      "string",
-      ["int"],
-      [newRubyReferenceId]
-    );
-
-    if (rubyType === "js_value") {
-      const jsReferenceId = Module.ccall(
-        "get_ruby_reference_number",
-        "float",
-        ["string", "int"],
-        ["value", rubyReferenceId]
-      );
-
-      return references.get(jsReferenceId);
-    }
-
-    return makeRubyValue(newRubyReferenceId);
-  };
-}
-
-function makeRubyValue(rubyReferenceId) {
-  const rubyType = Module.ccall(
-    "get_ruby_reference_type",
-    "string",
-    ["int"],
-    [rubyReferenceId]
-  );
-
-  const value = makeInnerRubyValue(rubyReferenceId, rubyType);
-
-  value[RUBY_VALUE] = rubyReferenceId;
-
-  const proxyMethods = {
-    set: function setPropertyOnRubyValue(obj, prop, value) {
-      const jsValue = getReference(value);
-
-      Prism.eval(`
-        Prism::ExternalReferences.set_ruby_value_property(${rubyReferenceId}, ${JSON.stringify(
-        prop,
-        null,
-        2
-      )}, ${jsValue})
-      `);
-
-      // TODO - we should have a bool result to indicate sucess
-      return true;
-    },
-    get: function getPropertyOnRubyValue(obj, prop) {
-      if (prop === RUBY_VALUE) {
-        return obj[prop];
-      }
-
-      if (prop === Symbol.iterator) {
-        prop = "each";
-
-        const rubyType = Module.ccall(
-          "get_ruby_reference_property_type",
-          "string",
-          ["string", "int"],
-          [prop, rubyReferenceId]
-        );
-
-        if (rubyType !== "method") {
-          throw new Error(
-            "Ruby value does not implement #each and cannot be iterated"
-          );
-        }
-
-        const iteratorReference = Module.ccall(
-          "get_ruby_iterator_reference",
-          "int",
-          ["int"],
-          [rubyReferenceId]
-        );
-
-        return makeRubyValue(iteratorReference);
-      }
-
-      if (Symbol.toPrimitive && prop === Symbol.toPrimitive) {
-        return {}[Symbol.toPrimitive];
-      }
-
-      return accessProperty(rubyValue, rubyReferenceId, rubyType, prop);
-    },
-  };
-
-  const rubyValue = new Proxy(value, proxyMethods);
-  registry.register(rubyValue, rubyReferenceId);
-  return rubyValue;
-}
-
-function accessProperty(value, rubyReferenceId, rubyType, prop) {
-  return tryCatchThrow(() => {
-    const propertyRubyType = Module.ccall(
-      "get_ruby_reference_property_type",
-      "string",
-      ["string", "int"],
-      [prop, rubyReferenceId]
-    );
-
-    if (rubyType === "array" && prop === "length") {
-      callbackArgs = [];
-
-      const methodRubyReferenceId = Module.ccall(
-        "get_ruby_method_reference",
-        "int",
-        ["string", "int"],
-        [prop, rubyReferenceId]
-      );
-
-      const resultReferenceId = Module.ccall(
-        "call_ruby_value_returning_reference",
-        "int",
-        ["int"],
-        [methodRubyReferenceId]
-      );
-
-      const result = Module.ccall(
-        "get_ruby_reference_as_int",
-        "float",
-        ["int"],
-        [resultReferenceId]
-      );
-
-      cleanupReference(methodRubyReferenceId);
-      cleanupReference(resultReferenceId);
-
-      return result;
-    }
-
-    if (propertyRubyType === "number") {
-      return Module.ccall(
-        "get_ruby_reference_number",
-        "float",
-        ["string", "int"],
-        [prop, rubyReferenceId]
-      );
-    }
-
-    if (propertyRubyType === "string") {
-      return Module.ccall(
-        "get_ruby_reference_string",
-        "string",
-        ["string", "int"],
-        [prop, rubyReferenceId]
-      );
-    }
-
-    if (propertyRubyType === "null") {
-      return null;
-    }
-
-    if (propertyRubyType === "undefined") {
-      return undefined;
-    }
-
-    if (propertyRubyType === "method") {
-      const methodRubyReferenceId = Module.ccall(
-        "get_ruby_method_reference",
-        "int",
-        ["string", "int"],
-        [prop, rubyReferenceId]
-      );
-
-      return makeRubyValue(methodRubyReferenceId);
-    }
-
-    if (propertyRubyType === "true") {
-      return true;
-    }
-
-    if (propertyRubyType === "false") {
-      return false;
-    }
-
-    if (propertyRubyType === "js_value") {
-      const jsReferenceIdString = Prism.eval(`
-        Prism::ExternalReferences.get_js_value_reference_number(${JSON.stringify(
-          prop,
-          null,
-          2
-        )}, ${rubyReferenceId})
-      `);
-
-      return references.get(parseInt(jsReferenceIdString, 10));
-    }
-
-    if (propertyRubyType === "object" || propertyRubyType === "array") {
-      const newRubyReferenceId = Prism.eval(`
-        Prism::ExternalReferences.get_ruby_property_object(${JSON.stringify(
-          prop
-        )}, ${rubyReferenceId})
-      `);
-
-      return makeRubyValue(parseInt(newRubyReferenceId, 10));
-    }
-
-    throw new Error("unhandled ruby type: " + propertyRubyType);
-  });
-}
-
-function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
-  const obj = references.get(reference);
-  const value = makeRubyValue(rubyReferenceId);
-
-  tryCatchThrow(() => {
-    obj[name] = value;
-  });
-}
-
-function getReference(obj) {
-  if (obj === null) {
-    return 0;
-  }
-
-  const refId = _refId++;
-
-  references.set(refId, obj);
-
-  return refId;
-}
-
-function freeReference(refId) {
-  references.delete(refId);
-}
-
-function getWindowReference() {
-  return getReference(window);
-}
-
-function getPrismBindingsReference() {
-  return getReference(Prism);
-}
-
-function getDocumentReference() {
-  return getReference(document);
-}
-
-function getArgsReference() {
-  return getReference(args);
-}
-
-function callMethod(reference, methodName) {
-  const value = references.get(reference);
-
-  tryCatchThrow(() => {
-    if (!value) {
-      throw new Error(
-        `Attempted to call ${methodName} on invalid reference: ${reference}`
-      );
-    }
-
-    value[methodName].apply(value, args);
-  });
-}
-
-function callMethodReturningReference(thisReference, reference) {
-  const thisValue = references.get(thisReference);
-  const value = references.get(reference);
-
-  return tryCatchThrow(() => {
-    if (!value || !thisValue) {
-      throw new Error(
-        `Attempted to call invalid reference: ${thisReference}, ${reference}, ${value}`
-      );
-    }
-
-    const result = value.apply(thisValue, args);
-
-    return getReference(result);
-  });
-}
-
-function callConstructor(reference) {
-  const value = references.get(reference);
-
-  return tryCatchThrow(() => {
-    if (!value) {
-      throw new Error(
-        `Attempted to construct invalid reference: ${reference}, ${value}`
-      );
-    }
-
-    const result = Reflect.construct(value, args);
-
-    return getReference(result);
-  });
-}
-
-function getValueString(reference) {
-  const value = references.get(reference);
-
-  return tryCatchThrow(() => {
-    return value.toString();
-  });
-}
-
-function getValueNumber(reference) {
-  const value = references.get(reference);
-
-  return tryCatchThrow(() => {
-    return Number(value);
-  });
-}
-
-function getValueReference(reference, property) {
-  const value = references.get(reference);
-  return tryCatchThrow(() => {
-    // TODO - this breaks on falsey values
-    if (!value) {
-      throw new Error(
-        `Attempted to look up ${property} on invalid reference: ${reference}`
-      );
-    }
-
-    return getReference(value[property]);
-  });
-}
-
-function getTypeOf(reference) {
-  const value = references.get(reference);
-
-  return tryCatchThrow(() => {
-    const type = typeof value;
-
-    if ((type === "object" || type === "function") && RUBY_VALUE in value) {
-      return "ruby_value";
-    }
-
-    return typeof value;
-  });
-}
-
-function getRubyReferenceId(reference) {
-  const value = references.get(reference);
-
-  return tryCatchThrow(() => {
-    return value[RUBY_VALUE];
-  });
-}
-
-function checkIfFunctionIsContructor(reference) {
-  const value = references.get(reference);
-
-  return tryCatchThrow(() => {
-    if (value === Symbol) {
-      return false;
-    }
-
-    return (
-      value.prototype &&
-      "constructor" in value.prototype &&
-      value.prototype.constructor !== Function
-    );
-  });
-}
-
-function getArgCount() {
-  return tryCatchThrow(() => callbackArgs.length);
-}
-
-function getArgString(index) {
-  const value = callbackArgs[index];
-  return tryCatchThrow(() => value.toString());
-}
-
-function getArgNumber(index) {
-  return callbackArgs[index];
-}
-
-function getArgReference(index) {
-  const value = callbackArgs[index];
-
-  return tryCatchThrow(() => {
-    return getReference(value);
-  });
-}
-
-function getArgClassName(index) {
-  const value = callbackArgs[index];
-
-  return tryCatchThrow(() => {
-    if (!value || !value.constructor) {
-      return "";
-    }
-
-    return value.constructor.name;
-  });
-}
-
-window.Prism = {
-  run,
-  eval: _eval,
-  setArgString,
-  setArgNumber,
-  setArgCallback,
-  setArgValue,
-  setObjectValue,
-  setObjectValueFromReference,
-  setObjectValueFromRubyReference,
-  freeReference,
-  clearArgs,
-  getValueReference,
-  getValueString,
-  getValueNumber,
-  callMethod,
-  callMethodReturningReference,
-  callConstructor,
-  render,
-  stringifyEvent,
-  getWindowReference,
-  getPrismBindingsReference,
-  getDocumentReference,
-  getArgsReference,
-  getArgCount,
-  getArgString,
-  getArgNumber,
-  getArgReference,
-  getArgClassName,
-  getTypeOf,
-  makeCallbackReference,
-  getRubyReferenceId,
-  checkIfFunctionIsContructor,
-  require: prismRequire,
-  import: importJS,
-};
-
-function importJS(url) {
-  return import(url);
-}
-
-function render() {
-  const rvtree = JSON.parse(Module.ccall("render", "string", []));
-  const vtree = rubyVTreeToSnabbdom(rvtree);
-
-  patch(currentContainer, vtree);
-
-  currentContainer = vtree;
-}
-
-function fetchAndLoad(name) {
-  return fetch(name)
-    .then((r) => r.text().then((t) => ({ ok: r.ok, text: t })))
-    .then(({ ok, text }) => {
-      if (!ok) {
-        throw new Error(`Prism: Could not load ${name}`, text);
-      }
-
-      return { name, text };
-    });
-}
-
-function _eval(s) {
-  return Module.ccall("eval", "string", ["string"], [s]);
-}
-
-async function prismRequire(cb, ...paths) {
-  for (const path of paths) {
-    await fetchAndLoad(path).then((module) => {
-      writeModule(module.name, module.text);
-      Module.ccall("load_ruby", "number", ["string"], [module.name]);
-    });
-  }
-
-  cb();
-}
-
-const require_regex = /require(_relative)?\s*\(?\s*['|"]([^'|"]+)/;
-
-function transformModule(moduleText) {
-  const lines = moduleText.split("\n");
-  const dependencies = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    const match = line.match(require_regex);
-    if (match) {
-      dependencies.push(match[2]);
-    } else {
-      if (dependencies.length === 0) {
-        return moduleText;
-      }
-
-      bodyText = lines
-        .slice(i)
-        .map((line) => `  ${line}`)
-        .join("\n");
-
-      const result = `async_require([${dependencies
-        .map((d) => `"${d}"`)
-        .join(",")}]) do\n${bodyText}\nend`;
-
-      return result;
-    }
-  }
-
-  return moduleText;
-}
-
-function writeModule(name, text) {
-  const parts = name.split("/").filter((a) => a.trim() !== "");
-
-  const directories = parts.slice(0, -1);
-  const basename = parts.slice(-1)[0];
-
-  const pwd = [];
-  for (let d of directories) {
-    try {
-      FS.mkdir("./" + pwd.concat(d).join("/"));
-    } catch (e) {}
-    pwd.push(d);
-  }
-
-  FS.writeFile(`./${name}`, transformModule(text));
-}
-
-function load(modulesToLoad, main, config = {}) {
-  modulePromise.then(() => {
-    Promise.all(modulesToLoad).then((modules) => {
-      for (let m of modules) {
-        writeModule(m.name, m.text);
-      }
-
-      const result = Module.ccall(
-        "load",
-        "number",
-        ["string", "string"],
-        [main, JSON.stringify(config)]
-      );
-      if (result === 0) {
-        //render();
-      }
-    });
-  });
-}
-
-window.addEventListener("unhandledrejection", function (event) {
-  if (event.reason === "longjmp") {
-    event.preventDefault();
-    event.stopPropagation();
-  }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
 });
-
-const modulePromise = new Promise((resolve, reject) => {
-  window.Module = {
-    preRun: [],
-    postRun: [resolve],
-    print: (function () {
-      return function (e) {
-        1 < arguments.length &&
-          (e = Array.prototype.slice.call(arguments).join(" ")),
-          console.log(e);
-      };
-    })(),
-    printErr: function (e) {
-      1 < arguments.length &&
-        (e = Array.prototype.slice.call(arguments).join(" ")),
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+const snabbdom = require("snabbdom");
+const patch = snabbdom.init([
+    require("snabbdom/modules/class").default,
+    require("snabbdom/modules/attributes").default,
+    require("snabbdom/modules/props").default,
+    require("snabbdom/modules/style").default,
+    require("snabbdom/modules/eventlisteners").default,
+    require("snabbdom/modules/dataset").default,
+]);
+const snabbdom_h = require("snabbdom/h").default;
+const RUBY_VALUE = Symbol("RUBY_VALUE");
+const references = new Map();
+let allLoaded = false;
+let modulesToLoad = [];
+let _refId = 1;
+let args = [];
+let callbackArgs = [];
+function run(element, main, config = {}) {
+    modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
+    load(modulesToLoad, main, config);
+}
+function clearArgs() {
+    args.splice(0, args.length);
+}
+function setArgString(index, value) {
+    args[index] = value;
+}
+function setArgNumber(index, value) {
+    args[index] = value;
+}
+const registry = new FinalizationRegistry(cleanupReference);
+function tryCatchThrow(f) {
+    try {
+        return f();
+    }
+    catch (e) {
+        if (e === "longjmp") {
+            throw e;
+        }
         console.error(e);
-    },
-    canvas: (function () {})(),
-    setStatus: function () {},
-    totalDependencies: 0,
-    monitorRunDependencies: function (e) {},
-  };
+        if (e instanceof Error) {
+            Module.ccall("print_backtrace", null, ["string"], [e.message]);
+        }
+        throw e;
+    }
+}
+function cleanupReference(reference) {
+    Module.ccall("cleanup_reference", null, ["number"], [reference]);
+}
+function makeCallbackReference(callbackReference) {
+    function callbackHandler(...args) {
+        callbackArgs = args;
+        Module.ccall("handle_callback", null, ["number"], [callbackReference]);
+    }
+    callbackHandler[RUBY_VALUE] = callbackReference;
+    registry.register(callbackHandler, callbackReference);
+    return getReference(callbackHandler);
+}
+function setArgCallback(index, reference) {
+    function callbackHandler(...args) {
+        callbackArgs = args;
+        Module.ccall("handle_callback", null, ["number"], [reference]);
+    }
+    args[index] = callbackHandler;
+    registry.register(callbackHandler, reference);
+}
+function setArgValue(index, reference) {
+    const referenceValue = lookupReference(reference);
+    tryCatchThrow(() => {
+        args[index] = referenceValue;
+    });
+}
+function setObjectValue(reference, name, value) {
+    const referenceValue = lookupReference(reference);
+    tryCatchThrow(() => {
+        referenceValue[name] = value;
+    });
+}
+function setObjectValueFromReference(reference, name, valueReference) {
+    const obj = lookupReference(reference);
+    const value = lookupReference(valueReference);
+    tryCatchThrow(() => {
+        obj[name] = value;
+    });
+}
+function makeInnerRubyValue(rubyReferenceId, rubyType) {
+    if (rubyType === "array") {
+        return [];
+    }
+    if (rubyType === "object") {
+        return {};
+    }
+    return function value(...args) {
+        // call my current reference
+        // just return a damn ruby value, worry about primitive promotion later
+        callbackArgs = args;
+        const newRubyReferenceId = Module.ccall("call_ruby_value_returning_reference", "number", ["number"], [rubyReferenceId]);
+        const rubyType = Module.ccall("get_ruby_reference_type", "string", ["number"], [newRubyReferenceId]);
+        if (rubyType === "js_value") {
+            const jsReferenceId = Module.ccall("get_ruby_reference_number", "number", ["string", "number"], ["value", rubyReferenceId]);
+            return lookupReference(jsReferenceId);
+        }
+        return makeRubyValue(newRubyReferenceId);
+    };
+}
+function makeRubyValue(rubyReferenceId) {
+    const rubyType = Module.ccall("get_ruby_reference_type", "string", ["number"], [rubyReferenceId]);
+    const value = makeInnerRubyValue(rubyReferenceId, rubyType);
+    value[RUBY_VALUE] = rubyReferenceId;
+    const proxyMethods = {
+        set: function setPropertyOnRubyValue(obj, prop, value) {
+            const jsValue = getReference(value);
+            Prism.eval(`
+        Prism::ExternalReferences.set_ruby_value_property(${rubyReferenceId}, ${JSON.stringify(prop, null, 2)}, ${jsValue})
+      `);
+            // TODO - we should have a bool result to indicate sucess
+            return true;
+        },
+        get: function getPropertyOnRubyValue(obj, prop) {
+            if (prop === RUBY_VALUE) {
+                return obj[prop];
+            }
+            if (prop === Symbol.iterator) {
+                prop = "each";
+                const rubyType = Module.ccall("get_ruby_reference_property_type", "string", ["string", "number"], [prop, rubyReferenceId]);
+                if (rubyType !== "method") {
+                    throw new Error("Ruby value does not implement #each and cannot be iterated");
+                }
+                const iteratorReference = Module.ccall("get_ruby_iterator_reference", "number", ["number"], [rubyReferenceId]);
+                return makeRubyValue(iteratorReference);
+            }
+            if (Symbol.toPrimitive && prop === Symbol.toPrimitive) {
+                return {}[Symbol.toPrimitive];
+            }
+            if (typeof prop === "symbol") {
+                throw new Error("unhandled symbol prop acces on ruby value: " + prop.toString());
+            }
+            return accessProperty(rubyValue, rubyReferenceId, rubyType, prop);
+        },
+    };
+    const rubyValue = new Proxy(value, proxyMethods);
+    registry.register(rubyValue, rubyReferenceId);
+    return rubyValue;
+}
+function accessProperty(value, rubyReferenceId, rubyType, prop) {
+    return tryCatchThrow(() => {
+        const propertyRubyType = Module.ccall("get_ruby_reference_property_type", "string", ["string", "number"], [prop, rubyReferenceId]);
+        if (rubyType === "array" && prop === "length") {
+            callbackArgs = [];
+            const methodRubyReferenceId = Module.ccall("get_ruby_method_reference", "number", ["string", "number"], [prop, rubyReferenceId]);
+            const resultReferenceId = Module.ccall("call_ruby_value_returning_reference", "number", ["number"], [methodRubyReferenceId]);
+            const result = Module.ccall("get_ruby_reference_as_int", "number", ["number"], [resultReferenceId]);
+            cleanupReference(methodRubyReferenceId);
+            cleanupReference(resultReferenceId);
+            return result;
+        }
+        if (propertyRubyType === "number") {
+            return Module.ccall("get_ruby_reference_number", "number", ["string", "number"], [prop, rubyReferenceId]);
+        }
+        if (propertyRubyType === "string") {
+            return Module.ccall("get_ruby_reference_string", "string", ["string", "number"], [prop, rubyReferenceId]);
+        }
+        if (propertyRubyType === "null") {
+            return null;
+        }
+        if (propertyRubyType === "undefined") {
+            return undefined;
+        }
+        if (propertyRubyType === "method") {
+            const methodRubyReferenceId = Module.ccall("get_ruby_method_reference", "number", ["string", "number"], [prop, rubyReferenceId]);
+            return makeRubyValue(methodRubyReferenceId);
+        }
+        if (propertyRubyType === "true") {
+            return true;
+        }
+        if (propertyRubyType === "false") {
+            return false;
+        }
+        if (propertyRubyType === "js_value") {
+            const jsReferenceIdString = Prism.eval(`
+        Prism::ExternalReferences.get_js_value_reference_number(${JSON.stringify(prop, null, 2)}, ${rubyReferenceId})
+      `);
+            return references.get(parseInt(jsReferenceIdString, 10));
+        }
+        if (propertyRubyType === "object" || propertyRubyType === "array") {
+            const newRubyReferenceId = Prism.eval(`
+        Prism::ExternalReferences.get_ruby_property_object(${JSON.stringify(prop)}, ${rubyReferenceId})
+      `);
+            return makeRubyValue(parseInt(newRubyReferenceId, 10));
+        }
+        throw new Error("unhandled ruby type: " + propertyRubyType);
+    });
+}
+function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
+    const obj = lookupReference(reference);
+    const value = makeRubyValue(rubyReferenceId);
+    tryCatchThrow(() => {
+        obj[name] = value;
+    });
+}
+function getReference(obj) {
+    if (obj === null) {
+        return 0;
+    }
+    const refId = _refId++;
+    references.set(refId, obj);
+    return refId;
+}
+function freeReference(refId) {
+    references.delete(refId);
+}
+function getWindowReference() {
+    return getReference(window);
+}
+function getPrismBindingsReference() {
+    return getReference(Prism);
+}
+function getDocumentReference() {
+    return getReference(document);
+}
+function getArgsReference() {
+    return getReference(args);
+}
+function callMethod(reference, methodName) {
+    const value = lookupReference(reference);
+    tryCatchThrow(() => {
+        if (!value) {
+            throw new Error(`Attempted to call ${methodName} on invalid reference: ${reference}`);
+        }
+        value[methodName].apply(value, args);
+    });
+}
+function callMethodReturningReference(thisReference, reference) {
+    const thisValue = lookupReference(thisReference);
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        if (!value || !thisValue) {
+            throw new Error(`Attempted to call invalid reference: ${thisReference}, ${reference}, ${value}`);
+        }
+        const result = value.apply(thisValue, args);
+        return getReference(result);
+    });
+}
+function callConstructor(reference) {
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        if (!value) {
+            throw new Error(`Attempted to construct invalid reference: ${reference}, ${value}`);
+        }
+        const result = Reflect.construct(value, args);
+        return getReference(result);
+    });
+}
+function lookupReference(reference) {
+    return references.get(reference);
+}
+function getValueString(reference) {
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        return value.toString();
+    });
+}
+function getValueNumber(reference) {
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        return Number(value);
+    });
+}
+function getValueReference(reference, property) {
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        // TODO - this breaks on falsey values
+        if (!value) {
+            throw new Error(`Attempted to look up ${property} on invalid reference: ${reference}`);
+        }
+        return getReference(value[property]);
+    });
+}
+function getTypeOf(reference) {
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        const type = typeof value;
+        if ((type === "object" || type === "function") && RUBY_VALUE in value) {
+            return "ruby_value";
+        }
+        return typeof value;
+    });
+}
+function getRubyReferenceId(reference) {
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        return value[RUBY_VALUE];
+    });
+}
+function checkIfFunctionIsContructor(reference) {
+    const value = lookupReference(reference);
+    return tryCatchThrow(() => {
+        if (value === Symbol) {
+            return false;
+        }
+        return (value.prototype &&
+            "constructor" in value.prototype &&
+            value.prototype.constructor !== Function);
+    });
+}
+function getArgCount() {
+    return tryCatchThrow(() => callbackArgs.length);
+}
+function getArgString(index) {
+    return tryCatchThrow(() => callbackArgs[index].toString());
+}
+function getArgNumber(index) {
+    return callbackArgs[index];
+}
+function getArgReference(index) {
+    const value = callbackArgs[index];
+    return tryCatchThrow(() => {
+        return getReference(value);
+    });
+}
+function getArgClassName(index) {
+    const value = callbackArgs[index];
+    return tryCatchThrow(() => {
+        if (!value || !value.constructor) {
+            return "";
+        }
+        return value.constructor.name;
+    });
+}
+const Prism = {
+    run,
+    eval: _eval,
+    setArgString,
+    setArgNumber,
+    setArgCallback,
+    setArgValue,
+    setObjectValue,
+    setObjectValueFromReference,
+    setObjectValueFromRubyReference,
+    freeReference,
+    clearArgs,
+    getValueReference,
+    getValueString,
+    getValueNumber,
+    callMethod,
+    callMethodReturningReference,
+    callConstructor,
+    getWindowReference,
+    getPrismBindingsReference,
+    getDocumentReference,
+    getArgsReference,
+    getArgCount,
+    getArgString,
+    getArgNumber,
+    getArgReference,
+    getArgClassName,
+    getTypeOf,
+    makeCallbackReference,
+    getRubyReferenceId,
+    checkIfFunctionIsContructor,
+    require: prismRequire,
+    import: importJS,
+};
+window.Prism = Prism;
+function importJS(url) {
+    return Promise.resolve().then(() => __importStar(require(url)));
+}
+function fetchAndLoad(name) {
+    return fetch(name)
+        .then((r) => r.text().then((t) => ({ ok: r.ok, text: t })))
+        .then(({ ok, text }) => {
+        if (!ok) {
+            throw new Error(`Prism: Could not load ${name}: ${text}`);
+        }
+        return { name, text };
+    });
+}
+function _eval(s) {
+    return Module.ccall("eval", "string", ["string"], [s]);
+}
+async function prismRequire(cb, ...paths) {
+    for (const path of paths) {
+        await fetchAndLoad(path).then((module) => {
+            writeModule(module.name, module.text);
+            Module.ccall("load_ruby", "number", ["string"], [module.name]);
+        });
+    }
+    cb();
+}
+const require_regex = /require(_relative)?\s*\(?\s*['|"]([^'|"]+)/;
+function transformModule(moduleText) {
+    const lines = moduleText.split("\n");
+    const dependencies = [];
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(require_regex);
+        if (match) {
+            dependencies.push(match[2]);
+        }
+        else {
+            if (dependencies.length === 0) {
+                return moduleText;
+            }
+            const bodyText = lines
+                .slice(i)
+                .map((line) => `  ${line}`)
+                .join("\n");
+            const result = `async_require([${dependencies
+                .map((d) => `"${d}"`)
+                .join(",")}]) do\n${bodyText}\nend`;
+            return result;
+        }
+    }
+    return moduleText;
+}
+function writeModule(name, text) {
+    const parts = name.split("/").filter((a) => a.trim() !== "");
+    const directories = parts.slice(0, -1);
+    const basename = parts.slice(-1)[0];
+    const pwd = [];
+    for (let d of directories) {
+        try {
+            FS.mkdir("./" + pwd.concat(d).join("/"));
+        }
+        catch (e) { }
+        pwd.push(d);
+    }
+    FS.writeFile(`./${name}`, transformModule(text));
+}
+function load(modulesToLoad, main, config = {}) {
+    modulePromise.then(() => {
+        Promise.all(modulesToLoad).then((modules) => {
+            for (let m of modules) {
+                writeModule(m.name, m.text);
+            }
+            Module.ccall("load", "number", ["string", "string"], [main, JSON.stringify(config)]);
+        });
+    });
+}
+window.addEventListener("unhandledrejection", function (event) {
+    if (event.reason === "longjmp") {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+});
+const modulePromise = new Promise((resolve, reject) => {
+    window.Module = {
+        preRun: [],
+        postRun: [resolve],
+        print: (function () {
+            return function (e) {
+                1 < arguments.length &&
+                    (e = Array.prototype.slice.call(arguments).join(" ")),
+                    console.log(e);
+            };
+        })(),
+        printErr: function (e) {
+            1 < arguments.length &&
+                (e = Array.prototype.slice.call(arguments).join(" ")),
+                console.error(e);
+        },
+        canvas: (function () { })(),
+        setStatus: function () { },
+        totalDependencies: 0,
+        monitorRunDependencies: function () { },
+    };
 });
 
 },{"snabbdom":10,"snabbdom/h":1,"snabbdom/modules/attributes":4,"snabbdom/modules/class":5,"snabbdom/modules/dataset":6,"snabbdom/modules/eventlisteners":7,"snabbdom/modules/props":8,"snabbdom/modules/style":9}]},{},[13]);

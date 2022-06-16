@@ -1,5 +1,5 @@
-var snabbdom = require("snabbdom");
-var patch = snabbdom.init([
+const snabbdom = require("snabbdom");
+const patch = snabbdom.init([
   require("snabbdom/modules/class").default,
   require("snabbdom/modules/attributes").default,
   require("snabbdom/modules/props").default,
@@ -7,140 +7,102 @@ var patch = snabbdom.init([
   require("snabbdom/modules/eventlisteners").default,
   require("snabbdom/modules/dataset").default,
 ]);
-var snabbdom_h = require("snabbdom/h").default;
+const snabbdom_h = require("snabbdom/h").default;
 
-function stringifyEvent(e) {
-  const obj = {};
-  for (let k in e) {
-    obj[k] = e[k];
-  }
-  return JSON.stringify(
-    obj,
-    (k, v) => {
-      if (v instanceof Node) return "Node";
-      if (v instanceof Window) return "Window";
-      return v;
-    },
-    " "
-  );
+const RUBY_VALUE = Symbol("RUBY_VALUE");
+
+type AnyFunction<T> = (...args: any[]) => T;
+type ReferenceToJS = number;
+type ReferenceToRuby = number;
+type RubyType = "string" | "number" | "null" | "undefined" | "true" | "false" | "js_value" | "array" | "method" | "object";
+
+
+interface RubyValue {
+  [RUBY_VALUE]: ReferenceToRuby;
 }
 
-function rubyVTreeToSnabbdom(rvtree) {
-  if (rvtree.type === "text") {
-    return rvtree.content;
-  }
-
-  let options = {};
-
-  for (let key in rvtree) {
-    if (key === "_children") {
-      continue;
-    }
-    if (key === "_type") {
-      continue;
-    }
-    if (key === "_class") {
-      continue;
-    }
-    if (key === "onClick") {
-      continue;
-    }
-    if (key === "onKeydown") {
-      continue;
-    }
-    if (key === "onInput") {
-      continue;
-    }
-
-    options[key] = rvtree[key];
-  }
-
-  if (options.on) {
-    for (let key in options.on) {
-      var handler = options.on[key];
-
-      options.on[key] = function (event) {
-        if (handler.prevent_default) {
-          event.preventDefault();
-        }
-
-        if (handler.stop_propagation) {
-          event.stopPropagation();
-        }
-
-        let args = [];
-
-        for (let arg of handler.args) {
-          if (arg.type === "event") {
-            args.push(serializeEvent(event));
-          }
-
-          if (arg.type === "event_data") {
-            args.push(event[arg.key]);
-          }
-
-          if (arg.type === "target_data") {
-            args.push(event.target[arg.key]);
-          }
-        }
-
-        var handlerWithArgs = Object.assign({}, handler, { args });
-
-        if (handlerWithArgs.type) {
-          Module.ccall(
-            "dispatch",
-            "void",
-            ["string"],
-            [JSON.stringify(handlerWithArgs)]
-          );
-        }
-        render();
-      };
-    }
-  }
-
-  return snabbdom_h(
-    rvtree._type + (rvtree._class || ""),
-    options,
-    (rvtree._children || []).map(rubyVTreeToSnabbdom)
-  );
+interface WasmModule extends EmscriptenModule {
+    ccall: typeof ccall;
 }
 
-var currentContainer;
-var allLoaded = false;
-var modulesToLoad = [];
+interface RubyMethod extends RubyValue {
+  (...args: any[]): void;
+}
 
-function run(element, main, config = {}) {
-  currentContainer = element;
+interface PrismModule {
+  eval(s: string): string;
+  run: typeof run;
+  setArgString: typeof setArgString;
+  setArgNumber: typeof setArgNumber;
+  setArgCallback: typeof setArgCallback;
+  setArgValue: typeof setArgValue;
+  setObjectValue: typeof setObjectValue;
+  setObjectValueFromReference: typeof setObjectValueFromReference;
+  setObjectValueFromRubyReference: typeof setObjectValueFromRubyReference;
+  freeReference: typeof freeReference;
+  clearArgs: typeof clearArgs;
+  getValueReference: typeof getValueReference;
+  getValueString: typeof getValueString;
+  getValueNumber: typeof getValueNumber;
+  callMethod: typeof callMethod;
+  callMethodReturningReference: typeof callMethodReturningReference;
+  callConstructor: typeof callConstructor;
+  getWindowReference: typeof getWindowReference;
+  getPrismBindingsReference: typeof getPrismBindingsReference;
+  getDocumentReference: typeof getDocumentReference;
+  getArgsReference: typeof getArgsReference;
+  getArgCount: typeof getArgCount;
+  getArgString: typeof getArgString;
+  getArgNumber: typeof getArgNumber;
+  getArgReference: typeof getArgReference;
+  getArgClassName: typeof getArgClassName;
+  getTypeOf: typeof getTypeOf;
+  makeCallbackReference: typeof makeCallbackReference;
+  getRubyReferenceId: typeof getRubyReferenceId;
+  checkIfFunctionIsContructor: typeof checkIfFunctionIsContructor;
+  require: typeof prismRequire;
+  import: typeof importJS;
+}
+
+interface Window {
+  Prism: PrismModule;
+}
+
+interface RemotePrismModule {
+  name: string;
+  text: string;
+}
+
+declare var Module: WasmModule;
+
+const references = new Map<ReferenceToJS, any>();
+let allLoaded = false;
+let modulesToLoad = [];
+let _refId = 1;
+let args: any[] = [];
+let callbackArgs: any[] = [];
+
+function run(element: Element, main: string, config = {}) {
   modulesToLoad = [fetchAndLoad("/prism-ruby/prism.rb"), fetchAndLoad(main)];
 
   load(modulesToLoad, main, config);
 }
 
-let _refId = 1;
-
-const references = new Map();
-let args = [];
-
 function clearArgs() {
   args.splice(0, args.length);
 }
 
-function setArgString(index, value) {
+function setArgString(index: keyof (typeof args), value: string) {
   args[index] = value;
 }
 
-function setArgNumber(index, value) {
+function setArgNumber(index: keyof (typeof args), value: string) {
   args[index] = value;
 }
-
-const RUBY_VALUE = Symbol("RUBY_VALUE");
-
-let callbackArgs = [];
 
 const registry = new FinalizationRegistry(cleanupReference);
 
-function tryCatchThrow(f) {
+function tryCatchThrow<T>(f: AnyFunction<T>): T {
   try {
     return f();
   } catch (e) {
@@ -148,32 +110,34 @@ function tryCatchThrow(f) {
       throw e;
     }
     console.error(e);
-    Module.ccall("print_backtrace", "void", ["string"], [e.message]);
+    if (e instanceof Error) {
+      Module.ccall("print_backtrace", null, ["string"], [e.message]);
+    }
     throw e;
   }
 }
 
-function cleanupReference(reference) {
-  Module.ccall("cleanup_reference", "void", ["int"], [reference]);
+function cleanupReference(reference: ReferenceToJS) {
+  Module.ccall("cleanup_reference", null, ["number"], [reference]);
 }
 
-function makeCallbackReference(callbackReference) {
-  function callbackHandler(...args) {
+function makeCallbackReference<Args extends Array<Args>>(callbackReference: ReferenceToJS) {
+  function callbackHandler(...args: Args) {
     callbackArgs = args;
-    Module.ccall("handle_callback", "void", ["int"], [callbackReference]);
+    Module.ccall("handle_callback", null, ["number"], [callbackReference]);
   }
 
-  callbackHandler[RUBY_VALUE] = callbackReference;
+  (callbackHandler as RubyMethod)[RUBY_VALUE] = callbackReference;
 
   registry.register(callbackHandler, callbackReference);
 
   return getReference(callbackHandler);
 }
 
-function setArgCallback(index, reference) {
-  function callbackHandler(...args) {
+function setArgCallback(index: number, reference: ReferenceToRuby) {
+  function callbackHandler(...args: any[]) {
     callbackArgs = args;
-    Module.ccall("handle_callback", "void", ["int"], [reference]);
+    Module.ccall("handle_callback", null, ["number"], [reference]);
   }
 
   args[index] = callbackHandler;
@@ -181,32 +145,32 @@ function setArgCallback(index, reference) {
   registry.register(callbackHandler, reference);
 }
 
-function setArgValue(index, reference) {
-  const referenceValue = references.get(reference);
+function setArgValue(index: number, reference: ReferenceToJS) {
+  const referenceValue = lookupReference(reference);
 
   tryCatchThrow(() => {
     args[index] = referenceValue;
   });
 }
 
-function setObjectValue(reference, name, value) {
-  const referenceValue = references.get(reference);
+function setObjectValue(reference: ReferenceToJS, name: string, value: any) {
+  const referenceValue = lookupReference(reference);
 
   tryCatchThrow(() => {
     referenceValue[name] = value;
   });
 }
 
-function setObjectValueFromReference(reference, name, valueReference) {
-  const obj = references.get(reference);
-  const value = references.get(valueReference);
+function setObjectValueFromReference(reference: ReferenceToJS, name: string, valueReference: ReferenceToJS) {
+  const obj = lookupReference(reference);
+  const value = lookupReference(valueReference);
 
   tryCatchThrow(() => {
     obj[name] = value;
   });
 }
 
-function makeInnerRubyValue(rubyReferenceId, rubyType) {
+function makeInnerRubyValue(rubyReferenceId: ReferenceToRuby, rubyType: RubyType) {
   if (rubyType === "array") {
     return [];
   }
@@ -215,54 +179,54 @@ function makeInnerRubyValue(rubyReferenceId, rubyType) {
     return {};
   }
 
-  return function value(...args) {
+  return function value(...args: any[]) {
     // call my current reference
     // just return a damn ruby value, worry about primitive promotion later
     callbackArgs = args;
 
     const newRubyReferenceId = Module.ccall(
       "call_ruby_value_returning_reference",
-      "int",
-      ["int"],
+      "number",
+      ["number"],
       [rubyReferenceId]
     );
 
     const rubyType = Module.ccall(
       "get_ruby_reference_type",
       "string",
-      ["int"],
+      ["number"],
       [newRubyReferenceId]
     );
 
     if (rubyType === "js_value") {
       const jsReferenceId = Module.ccall(
         "get_ruby_reference_number",
-        "float",
-        ["string", "int"],
+        "number",
+        ["string", "number"],
         ["value", rubyReferenceId]
       );
 
-      return references.get(jsReferenceId);
+      return lookupReference(jsReferenceId);
     }
 
     return makeRubyValue(newRubyReferenceId);
   };
 }
 
-function makeRubyValue(rubyReferenceId) {
+function makeRubyValue(rubyReferenceId: ReferenceToRuby): RubyValue {
   const rubyType = Module.ccall(
     "get_ruby_reference_type",
     "string",
-    ["int"],
+    ["number"],
     [rubyReferenceId]
-  );
+  ) as RubyType;
 
   const value = makeInnerRubyValue(rubyReferenceId, rubyType);
 
-  value[RUBY_VALUE] = rubyReferenceId;
+  (value as RubyValue)[RUBY_VALUE] = rubyReferenceId;
 
   const proxyMethods = {
-    set: function setPropertyOnRubyValue(obj, prop, value) {
+    set: function setPropertyOnRubyValue(obj: any, prop: string, value: any) {
       const jsValue = getReference(value);
 
       Prism.eval(`
@@ -276,7 +240,7 @@ function makeRubyValue(rubyReferenceId) {
       // TODO - we should have a bool result to indicate sucess
       return true;
     },
-    get: function getPropertyOnRubyValue(obj, prop) {
+    get: function getPropertyOnRubyValue(obj: any, prop: string | symbol): any {
       if (prop === RUBY_VALUE) {
         return obj[prop];
       }
@@ -287,7 +251,7 @@ function makeRubyValue(rubyReferenceId) {
         const rubyType = Module.ccall(
           "get_ruby_reference_property_type",
           "string",
-          ["string", "int"],
+          ["string", "number"],
           [prop, rubyReferenceId]
         );
 
@@ -299,8 +263,8 @@ function makeRubyValue(rubyReferenceId) {
 
         const iteratorReference = Module.ccall(
           "get_ruby_iterator_reference",
-          "int",
-          ["int"],
+          "number",
+          ["number"],
           [rubyReferenceId]
         );
 
@@ -308,7 +272,11 @@ function makeRubyValue(rubyReferenceId) {
       }
 
       if (Symbol.toPrimitive && prop === Symbol.toPrimitive) {
-        return {}[Symbol.toPrimitive];
+        return ({} as any)[Symbol.toPrimitive];
+      }
+
+      if (typeof prop === "symbol") {
+        throw new Error("unhandled symbol prop acces on ruby value: " + prop.toString());
       }
 
       return accessProperty(rubyValue, rubyReferenceId, rubyType, prop);
@@ -320,12 +288,12 @@ function makeRubyValue(rubyReferenceId) {
   return rubyValue;
 }
 
-function accessProperty(value, rubyReferenceId, rubyType, prop) {
+function accessProperty(value: RubyValue, rubyReferenceId: ReferenceToRuby, rubyType: RubyType, prop: string) {
   return tryCatchThrow(() => {
     const propertyRubyType = Module.ccall(
       "get_ruby_reference_property_type",
       "string",
-      ["string", "int"],
+      ["string", "number"],
       [prop, rubyReferenceId]
     );
 
@@ -334,22 +302,22 @@ function accessProperty(value, rubyReferenceId, rubyType, prop) {
 
       const methodRubyReferenceId = Module.ccall(
         "get_ruby_method_reference",
-        "int",
-        ["string", "int"],
+        "number",
+        ["string", "number"],
         [prop, rubyReferenceId]
       );
 
       const resultReferenceId = Module.ccall(
         "call_ruby_value_returning_reference",
-        "int",
-        ["int"],
+        "number",
+        ["number"],
         [methodRubyReferenceId]
       );
 
       const result = Module.ccall(
         "get_ruby_reference_as_int",
-        "float",
-        ["int"],
+        "number",
+        ["number"],
         [resultReferenceId]
       );
 
@@ -362,8 +330,8 @@ function accessProperty(value, rubyReferenceId, rubyType, prop) {
     if (propertyRubyType === "number") {
       return Module.ccall(
         "get_ruby_reference_number",
-        "float",
-        ["string", "int"],
+        "number",
+        ["string", "number"],
         [prop, rubyReferenceId]
       );
     }
@@ -372,7 +340,7 @@ function accessProperty(value, rubyReferenceId, rubyType, prop) {
       return Module.ccall(
         "get_ruby_reference_string",
         "string",
-        ["string", "int"],
+        ["string", "number"],
         [prop, rubyReferenceId]
       );
     }
@@ -388,8 +356,8 @@ function accessProperty(value, rubyReferenceId, rubyType, prop) {
     if (propertyRubyType === "method") {
       const methodRubyReferenceId = Module.ccall(
         "get_ruby_method_reference",
-        "int",
-        ["string", "int"],
+        "number",
+        ["string", "number"],
         [prop, rubyReferenceId]
       );
 
@@ -430,8 +398,8 @@ function accessProperty(value, rubyReferenceId, rubyType, prop) {
   });
 }
 
-function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
-  const obj = references.get(reference);
+function setObjectValueFromRubyReference(reference: ReferenceToJS, name: string, rubyReferenceId: ReferenceToRuby) {
+  const obj = lookupReference(reference);
   const value = makeRubyValue(rubyReferenceId);
 
   tryCatchThrow(() => {
@@ -439,7 +407,7 @@ function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
   });
 }
 
-function getReference(obj) {
+function getReference(obj: any): ReferenceToJS {
   if (obj === null) {
     return 0;
   }
@@ -451,7 +419,7 @@ function getReference(obj) {
   return refId;
 }
 
-function freeReference(refId) {
+function freeReference(refId: ReferenceToJS) {
   references.delete(refId);
 }
 
@@ -471,8 +439,8 @@ function getArgsReference() {
   return getReference(args);
 }
 
-function callMethod(reference, methodName) {
-  const value = references.get(reference);
+function callMethod(reference: ReferenceToJS, methodName: string) {
+  const value = lookupReference(reference);
 
   tryCatchThrow(() => {
     if (!value) {
@@ -485,9 +453,9 @@ function callMethod(reference, methodName) {
   });
 }
 
-function callMethodReturningReference(thisReference, reference) {
-  const thisValue = references.get(thisReference);
-  const value = references.get(reference);
+function callMethodReturningReference(thisReference: ReferenceToJS, reference: ReferenceToJS) {
+  const thisValue = lookupReference(thisReference);
+  const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
     if (!value || !thisValue) {
@@ -502,8 +470,8 @@ function callMethodReturningReference(thisReference, reference) {
   });
 }
 
-function callConstructor(reference) {
-  const value = references.get(reference);
+function callConstructor(reference: ReferenceToJS) {
+  const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
     if (!value) {
@@ -518,24 +486,28 @@ function callConstructor(reference) {
   });
 }
 
-function getValueString(reference) {
-  const value = references.get(reference);
+function lookupReference(reference: ReferenceToJS) {
+  return references.get(reference);
+}
+
+function getValueString(reference: ReferenceToRuby) {
+  const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
     return value.toString();
   });
 }
 
-function getValueNumber(reference) {
-  const value = references.get(reference);
+function getValueNumber(reference: ReferenceToJS) {
+  const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
     return Number(value);
   });
 }
 
-function getValueReference(reference, property) {
-  const value = references.get(reference);
+function getValueReference(reference: ReferenceToJS, property: string) {
+  const value = lookupReference(reference);
   return tryCatchThrow(() => {
     // TODO - this breaks on falsey values
     if (!value) {
@@ -548,8 +520,8 @@ function getValueReference(reference, property) {
   });
 }
 
-function getTypeOf(reference) {
-  const value = references.get(reference);
+function getTypeOf(reference: ReferenceToJS): string {
+  const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
     const type = typeof value;
@@ -562,16 +534,16 @@ function getTypeOf(reference) {
   });
 }
 
-function getRubyReferenceId(reference) {
-  const value = references.get(reference);
+function getRubyReferenceId(reference: ReferenceToJS): ReferenceToRuby {
+  const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
     return value[RUBY_VALUE];
   });
 }
 
-function checkIfFunctionIsContructor(reference) {
-  const value = references.get(reference);
+function checkIfFunctionIsContructor(reference: ReferenceToJS) {
+  const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
     if (value === Symbol) {
@@ -586,20 +558,19 @@ function checkIfFunctionIsContructor(reference) {
   });
 }
 
-function getArgCount() {
+function getArgCount(): number {
   return tryCatchThrow(() => callbackArgs.length);
 }
 
-function getArgString(index) {
-  const value = callbackArgs[index];
-  return tryCatchThrow(() => value.toString());
+function getArgString(index: number): string {
+  return tryCatchThrow(() => callbackArgs[index].toString());
 }
 
-function getArgNumber(index) {
+function getArgNumber(index: number): number {
   return callbackArgs[index];
 }
 
-function getArgReference(index) {
+function getArgReference(index: number): ReferenceToJS {
   const value = callbackArgs[index];
 
   return tryCatchThrow(() => {
@@ -607,7 +578,7 @@ function getArgReference(index) {
   });
 }
 
-function getArgClassName(index) {
+function getArgClassName(index: number): string {
   const value = callbackArgs[index];
 
   return tryCatchThrow(() => {
@@ -619,7 +590,7 @@ function getArgClassName(index) {
   });
 }
 
-window.Prism = {
+const Prism: PrismModule = {
   run,
   eval: _eval,
   setArgString,
@@ -637,8 +608,6 @@ window.Prism = {
   callMethod,
   callMethodReturningReference,
   callConstructor,
-  render,
-  stringifyEvent,
   getWindowReference,
   getPrismBindingsReference,
   getDocumentReference,
@@ -656,36 +625,29 @@ window.Prism = {
   import: importJS,
 };
 
-function importJS(url) {
+window.Prism = Prism;
+
+function importJS(url: string) {
   return import(url);
 }
 
-function render() {
-  const rvtree = JSON.parse(Module.ccall("render", "string", []));
-  const vtree = rubyVTreeToSnabbdom(rvtree);
-
-  patch(currentContainer, vtree);
-
-  currentContainer = vtree;
-}
-
-function fetchAndLoad(name) {
+function fetchAndLoad(name: string) {
   return fetch(name)
     .then((r) => r.text().then((t) => ({ ok: r.ok, text: t })))
     .then(({ ok, text }) => {
       if (!ok) {
-        throw new Error(`Prism: Could not load ${name}`, text);
+        throw new Error(`Prism: Could not load ${name}: ${text}`);
       }
 
       return { name, text };
     });
 }
 
-function _eval(s) {
+function _eval(s: string) {
   return Module.ccall("eval", "string", ["string"], [s]);
 }
 
-async function prismRequire(cb, ...paths) {
+async function prismRequire(cb: () => void, ...paths: string[]) {
   for (const path of paths) {
     await fetchAndLoad(path).then((module) => {
       writeModule(module.name, module.text);
@@ -698,7 +660,7 @@ async function prismRequire(cb, ...paths) {
 
 const require_regex = /require(_relative)?\s*\(?\s*['|"]([^'|"]+)/;
 
-function transformModule(moduleText) {
+function transformModule(moduleText: string) {
   const lines = moduleText.split("\n");
   const dependencies = [];
 
@@ -713,7 +675,7 @@ function transformModule(moduleText) {
         return moduleText;
       }
 
-      bodyText = lines
+      const bodyText = lines
         .slice(i)
         .map((line) => `  ${line}`)
         .join("\n");
@@ -729,7 +691,7 @@ function transformModule(moduleText) {
   return moduleText;
 }
 
-function writeModule(name, text) {
+function writeModule(name: string, text: string) {
   const parts = name.split("/").filter((a) => a.trim() !== "");
 
   const directories = parts.slice(0, -1);
@@ -746,22 +708,19 @@ function writeModule(name, text) {
   FS.writeFile(`./${name}`, transformModule(text));
 }
 
-function load(modulesToLoad, main, config = {}) {
+function load(modulesToLoad: Promise<RemotePrismModule>[], main: string, config = {}) {
   modulePromise.then(() => {
     Promise.all(modulesToLoad).then((modules) => {
       for (let m of modules) {
         writeModule(m.name, m.text);
       }
 
-      const result = Module.ccall(
+      Module.ccall(
         "load",
         "number",
         ["string", "string"],
         [main, JSON.stringify(config)]
       );
-      if (result === 0) {
-        //render();
-      }
     });
   });
 }
@@ -776,15 +735,15 @@ window.addEventListener("unhandledrejection", function (event) {
 const modulePromise = new Promise((resolve, reject) => {
   window.Module = {
     preRun: [],
-    postRun: [resolve],
+    postRun: [resolve as () => void],
     print: (function () {
-      return function (e) {
+      return function (e: string) {
         1 < arguments.length &&
           (e = Array.prototype.slice.call(arguments).join(" ")),
           console.log(e);
       };
     })(),
-    printErr: function (e) {
+    printErr: function (e: string) {
       1 < arguments.length &&
         (e = Array.prototype.slice.call(arguments).join(" ")),
         console.error(e);
@@ -792,6 +751,6 @@ const modulePromise = new Promise((resolve, reject) => {
     canvas: (function () {})(),
     setStatus: function () {},
     totalDependencies: 0,
-    monitorRunDependencies: function (e) {},
-  };
+    monitorRunDependencies: function () {},
+  } as any;
 });

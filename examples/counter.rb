@@ -22,7 +22,7 @@ class SnabbdomComponent
   def update_vdom
     vdom = render
 
-    @patch.call(nil, @container, vdom.stringify_keys)
+    @patch.call(nil, @container, vdom)
 
     @container = vdom
   end

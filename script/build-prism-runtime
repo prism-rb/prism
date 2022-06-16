@@ -10,9 +10,9 @@ end
 `mkdir -p build`
 Dir.chdir("build")
 
-`cp #{__dir__}/../main.c main.c`
+`cp #{__dir__}/../src/c/bindings.c bindings.c`
 
-exported_methods = `cat main.c | grep ^EXPORT`.split("\n")
+exported_methods = `cat bindings.c | grep ^EXPORT`.split("\n")
 exported_methods.map! { |line| line.split(" ").drop(2).first.split("(").first }
 
 formatted_exported_methods =  "[#{exported_methods.map { |m| "'_#{m}'" }.join(", ")}]"
@@ -28,11 +28,11 @@ puts "Compiling to Wasm..."
     -gsource-map \
     --source-map-base $PWD/build \
     -I #{__dir__}/../mruby/include \
-    main.c \
+    bindings.c \
     #{__dir__}/../mruby/build/emscripten/lib/libmruby_core.a \
     #{__dir__}/../mruby/build/emscripten/lib/libmruby.a \
     -o bundle.js
 `
 
-`rm main.c`
+`rm bindings.c`
 puts "Compiled to build/"
