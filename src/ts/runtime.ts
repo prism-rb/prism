@@ -10,15 +10,36 @@ const patch = snabbdom.init([
 const snabbdom_h = require("snabbdom/h").default;
 
 const RUBY_VALUE = Symbol("RUBY_VALUE");
+const RUBY_TYPE = Symbol("RUBY_TYPE");
+
+const kReferenceToRuby = Symbol("kReferenceToRuby");
+const kReferenceToJS = Symbol("kReferenceToJS");
 
 type AnyFunction<T> = (...args: any[]) => T;
-type ReferenceToJS = number;
-type ReferenceToRuby = number;
+type ReferenceToJS = {ID: typeof kReferenceToJS};
+type ReferenceToRuby = {ID: typeof kReferenceToRuby};
 type RubyType = "string" | "number" | "null" | "undefined" | "true" | "false" | "js_value" | "array" | "method" | "object";
 
 
+function refToNumber(ref: ReferenceToJS | ReferenceToRuby): number {
+  return ref as unknown as number;
+}
+
+function cast<R>(n: any): R {
+  return n as unknown as R;
+}
+
+function ReferenceToRuby(n: number): ReferenceToRuby {
+  return cast<ReferenceToRuby>(n);
+}
+
+function ReferenceToJS(n: number): ReferenceToJS {
+  return cast<ReferenceToJS>(n);
+}
+
 interface RubyValue {
   [RUBY_VALUE]: ReferenceToRuby;
+  [RUBY_TYPE]: RubyType;
 }
 
 interface WasmModule extends EmscriptenModule {
@@ -117,14 +138,14 @@ function tryCatchThrow<T>(f: AnyFunction<T>): T {
   }
 }
 
-function cleanupReference(reference: ReferenceToJS) {
-  Module.ccall("cleanup_reference", null, ["number"], [reference]);
+function cleanupReference(reference: ReferenceToRuby) {
+  Module.ccall("cleanup_reference", null, ["number"], [refToNumber(reference)]);
 }
 
-function makeCallbackReference<Args extends Array<Args>>(callbackReference: ReferenceToJS) {
+function makeCallbackReference<Args extends Array<Args>>(callbackReference: ReferenceToRuby) {
   function callbackHandler(...args: Args) {
     callbackArgs = args;
-    Module.ccall("handle_callback", null, ["number"], [callbackReference]);
+    Module.ccall("handle_callback", null, ["number"], [refToNumber(callbackReference)]);
   }
 
   (callbackHandler as RubyMethod)[RUBY_VALUE] = callbackReference;
@@ -137,7 +158,7 @@ function makeCallbackReference<Args extends Array<Args>>(callbackReference: Refe
 function setArgCallback(index: number, reference: ReferenceToRuby) {
   function callbackHandler(...args: any[]) {
     callbackArgs = args;
-    Module.ccall("handle_callback", null, ["number"], [reference]);
+    Module.ccall("handle_callback", null, ["number"], [refToNumber(reference)]);
   }
 
   args[index] = callbackHandler;
@@ -188,14 +209,14 @@ function makeInnerRubyValue(rubyReferenceId: ReferenceToRuby, rubyType: RubyType
       "call_ruby_value_returning_reference",
       "number",
       ["number"],
-      [rubyReferenceId]
-    );
+      [refToNumber(rubyReferenceId)]
+    ) as unknown as ReferenceToRuby;
 
     const rubyType = Module.ccall(
       "get_ruby_reference_type",
       "string",
       ["number"],
-      [newRubyReferenceId]
+      [refToNumber(newRubyReferenceId)]
     );
 
     if (rubyType === "js_value") {
@@ -203,10 +224,24 @@ function makeInnerRubyValue(rubyReferenceId: ReferenceToRuby, rubyType: RubyType
         "get_ruby_reference_number",
         "number",
         ["string", "number"],
-        ["value", rubyReferenceId]
-      );
+        ["value", refToNumber(rubyReferenceId)]
+      ) as unknown as ReferenceToJS;
 
       return lookupReference(jsReferenceId);
+    }
+
+
+    if (rubyType === "string") {
+      const value = Module.ccall(
+        "get_ruby_reference_to_s",
+        "string",
+        ["number"],
+        [refToNumber(newRubyReferenceId)]
+      );
+
+      cleanupReference(newRubyReferenceId);
+
+      return value;
     }
 
     // TODO - promote strings and numbers to JS primitives here
@@ -219,12 +254,13 @@ function makeRubyValue(rubyReferenceId: ReferenceToRuby): RubyValue {
     "get_ruby_reference_type",
     "string",
     ["number"],
-    [rubyReferenceId]
+    [refToNumber(rubyReferenceId)]
   ) as RubyType;
 
   const value = makeInnerRubyValue(rubyReferenceId, rubyType);
 
   (value as RubyValue)[RUBY_VALUE] = rubyReferenceId;
+  (value as RubyValue)[RUBY_TYPE] = rubyType;
 
   const proxyMethods = {
     set: function setPropertyOnRubyValue(obj: any, prop: string, value: any) {
@@ -253,7 +289,7 @@ function makeRubyValue(rubyReferenceId: ReferenceToRuby): RubyValue {
           "get_ruby_reference_property_type",
           "string",
           ["string", "number"],
-          [prop, rubyReferenceId]
+          [prop, refToNumber(rubyReferenceId)]
         );
 
         if (rubyType !== "method") {
@@ -262,12 +298,12 @@ function makeRubyValue(rubyReferenceId: ReferenceToRuby): RubyValue {
           );
         }
 
-        const iteratorReference = Module.ccall(
+        const iteratorReference = ReferenceToRuby(Module.ccall(
           "get_ruby_iterator_reference",
           "number",
           ["number"],
-          [rubyReferenceId]
-        );
+          [refToNumber(rubyReferenceId)]
+        ));
 
         return makeRubyValue(iteratorReference);
       }
@@ -305,31 +341,31 @@ function accessProperty(value: RubyValue, rubyReferenceId: ReferenceToRuby, ruby
       "get_ruby_reference_property_type",
       "string",
       ["string", "number"],
-      [prop, rubyReferenceId]
+      [prop, refToNumber(rubyReferenceId)]
     );
 
     if (rubyType === "array" && prop === "length") {
       callbackArgs = [];
 
-      const methodRubyReferenceId = Module.ccall(
+      const methodRubyReferenceId = ReferenceToRuby(Module.ccall(
         "get_ruby_method_reference",
         "number",
         ["string", "number"],
-        [prop, rubyReferenceId]
-      );
+        [prop, refToNumber(rubyReferenceId)]
+      ));
 
-      const resultReferenceId = Module.ccall(
+      const resultReferenceId = ReferenceToRuby(Module.ccall(
         "call_ruby_value_returning_reference",
         "number",
         ["number"],
-        [methodRubyReferenceId]
-      );
+        [refToNumber(methodRubyReferenceId)]
+      ));
 
       const result = Module.ccall(
         "get_ruby_reference_as_int",
         "number",
         ["number"],
-        [resultReferenceId]
+        [refToNumber(resultReferenceId)]
       );
 
       cleanupReference(methodRubyReferenceId);
@@ -343,7 +379,7 @@ function accessProperty(value: RubyValue, rubyReferenceId: ReferenceToRuby, ruby
         "get_ruby_reference_number",
         "number",
         ["string", "number"],
-        [prop, rubyReferenceId]
+        [prop, refToNumber(rubyReferenceId)]
       );
     }
 
@@ -352,7 +388,7 @@ function accessProperty(value: RubyValue, rubyReferenceId: ReferenceToRuby, ruby
         "get_ruby_reference_string",
         "string",
         ["string", "number"],
-        [prop, rubyReferenceId]
+        [prop, refToNumber(rubyReferenceId)]
       );
     }
 
@@ -365,12 +401,12 @@ function accessProperty(value: RubyValue, rubyReferenceId: ReferenceToRuby, ruby
     }
 
     if (propertyRubyType === "method") {
-      const methodRubyReferenceId = Module.ccall(
+      const methodRubyReferenceId = ReferenceToRuby(Module.ccall(
         "get_ruby_method_reference",
         "number",
         ["string", "number"],
-        [prop, rubyReferenceId]
-      );
+        [prop, refToNumber(rubyReferenceId)]
+      ));
 
       return makeRubyValue(methodRubyReferenceId);
     }
@@ -392,7 +428,7 @@ function accessProperty(value: RubyValue, rubyReferenceId: ReferenceToRuby, ruby
         )}, ${rubyReferenceId})
       `);
 
-      return references.get(parseInt(jsReferenceIdString, 10));
+      return references.get(ReferenceToJS(parseInt(jsReferenceIdString, 10)));
     }
 
     if (propertyRubyType === "object" || propertyRubyType === "array") {
@@ -402,7 +438,7 @@ function accessProperty(value: RubyValue, rubyReferenceId: ReferenceToRuby, ruby
         )}, ${rubyReferenceId})
       `);
 
-      return makeRubyValue(parseInt(newRubyReferenceId, 10));
+      return makeRubyValue(ReferenceToRuby(parseInt(newRubyReferenceId, 10)));
     }
 
     throw new Error("unhandled ruby type: " + propertyRubyType);
@@ -420,14 +456,14 @@ function setObjectValueFromRubyReference(reference: ReferenceToJS, name: string,
 
 function getReference(obj: any): ReferenceToJS {
   if (obj === null) {
-    return 0;
+    return ReferenceToJS(0);
   }
 
   const refId = _refId++;
 
-  references.set(refId, obj);
+  references.set(ReferenceToJS(refId), obj);
 
-  return refId;
+  return ReferenceToJS(refId);
 }
 
 function freeReference(refId: ReferenceToJS) {
@@ -501,7 +537,7 @@ function lookupReference(reference: ReferenceToJS) {
   return references.get(reference);
 }
 
-function getValueString(reference: ReferenceToRuby) {
+function getValueString(reference: ReferenceToJS) {
   const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
@@ -549,7 +585,7 @@ function getRubyReferenceId(reference: ReferenceToJS): ReferenceToRuby {
   const value = lookupReference(reference);
 
   return tryCatchThrow(() => {
-    return value[RUBY_VALUE];
+    return value[RUBY_VALUE] as ReferenceToRuby;
   });
 }
 

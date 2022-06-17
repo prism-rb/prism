@@ -452,6 +452,18 @@ class JSBindingsTest
 
       assert_eq(window.forInTest({"foo" => "bar"}), "foobar")
     end
+
+    run_test "ruby strings are converted to JavaScript" do
+      input = {"test" => -> { "result" }}
+
+      window.eval <<~JS
+        window.stringConversionTest = function (obj) {
+          return obj.test() === "result";
+        }
+      JS
+
+      assert_eq(window.stringConversionTest(input), true)
+    end
   end
 end
 

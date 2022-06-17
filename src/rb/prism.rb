@@ -435,6 +435,10 @@ module Prism
       lookup_reference_prop_from_js_key(prop_name, ruby_reference_id).to_f
     end
 
+    def self.get_ruby_reference_to_s(ruby_reference_id)
+      dereference(ruby_reference_id).to_s
+    end
+
     def self.get_ruby_reference_string(prop_name, ruby_reference_id)
       lookup_reference_prop_from_js_key(prop_name, ruby_reference_id).to_s
     end
@@ -450,7 +454,11 @@ module Prism
     def self.get_ruby_method_reference(prop_name, ruby_reference_id)
       value = dereference(ruby_reference_id)
 
-      Prism::ExternalReferences.get_ruby_reference(value.method(prop_name))
+      if value.respond_to?(prop_name)
+        Prism::ExternalReferences.get_ruby_reference(value.method(prop_name))
+      else
+        Prism::ExternalReferences.get_ruby_reference(value[prop_name])
+      end
     end
 
     def self.get_ruby_iterator_reference(ruby_reference_id)

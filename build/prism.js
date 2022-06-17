@@ -860,6 +860,21 @@ const patch = snabbdom.init([
 ]);
 const snabbdom_h = require("snabbdom/h").default;
 const RUBY_VALUE = Symbol("RUBY_VALUE");
+const RUBY_TYPE = Symbol("RUBY_TYPE");
+const kReferenceToRuby = Symbol("kReferenceToRuby");
+const kReferenceToJS = Symbol("kReferenceToJS");
+function refToNumber(ref) {
+    return ref;
+}
+function cast(n) {
+    return n;
+}
+function ReferenceToRuby(n) {
+    return cast(n);
+}
+function ReferenceToJS(n) {
+    return cast(n);
+}
 const references = new Map();
 let allLoaded = false;
 let modulesToLoad = [];
@@ -896,12 +911,12 @@ function tryCatchThrow(f) {
     }
 }
 function cleanupReference(reference) {
-    Module.ccall("cleanup_reference", null, ["number"], [reference]);
+    Module.ccall("cleanup_reference", null, ["number"], [refToNumber(reference)]);
 }
 function makeCallbackReference(callbackReference) {
     function callbackHandler(...args) {
         callbackArgs = args;
-        Module.ccall("handle_callback", null, ["number"], [callbackReference]);
+        Module.ccall("handle_callback", null, ["number"], [refToNumber(callbackReference)]);
     }
     callbackHandler[RUBY_VALUE] = callbackReference;
     registry.register(callbackHandler, callbackReference);
@@ -910,7 +925,7 @@ function makeCallbackReference(callbackReference) {
 function setArgCallback(index, reference) {
     function callbackHandler(...args) {
         callbackArgs = args;
-        Module.ccall("handle_callback", null, ["number"], [reference]);
+        Module.ccall("handle_callback", null, ["number"], [refToNumber(reference)]);
     }
     args[index] = callbackHandler;
     registry.register(callbackHandler, reference);
@@ -945,20 +960,26 @@ function makeInnerRubyValue(rubyReferenceId, rubyType) {
         // call my current reference
         // just return a damn ruby value, worry about primitive promotion later
         callbackArgs = args;
-        const newRubyReferenceId = Module.ccall("call_ruby_value_returning_reference", "number", ["number"], [rubyReferenceId]);
-        const rubyType = Module.ccall("get_ruby_reference_type", "string", ["number"], [newRubyReferenceId]);
+        const newRubyReferenceId = Module.ccall("call_ruby_value_returning_reference", "number", ["number"], [refToNumber(rubyReferenceId)]);
+        const rubyType = Module.ccall("get_ruby_reference_type", "string", ["number"], [refToNumber(newRubyReferenceId)]);
         if (rubyType === "js_value") {
-            const jsReferenceId = Module.ccall("get_ruby_reference_number", "number", ["string", "number"], ["value", rubyReferenceId]);
+            const jsReferenceId = Module.ccall("get_ruby_reference_number", "number", ["string", "number"], ["value", refToNumber(rubyReferenceId)]);
             return lookupReference(jsReferenceId);
+        }
+        if (rubyType === "string") {
+            const value = Module.ccall("get_ruby_reference_to_s", "string", ["number"], [refToNumber(newRubyReferenceId)]);
+            cleanupReference(newRubyReferenceId);
+            return value;
         }
         // TODO - promote strings and numbers to JS primitives here
         return makeRubyValue(newRubyReferenceId);
     };
 }
 function makeRubyValue(rubyReferenceId) {
-    const rubyType = Module.ccall("get_ruby_reference_type", "string", ["number"], [rubyReferenceId]);
+    const rubyType = Module.ccall("get_ruby_reference_type", "string", ["number"], [refToNumber(rubyReferenceId)]);
     const value = makeInnerRubyValue(rubyReferenceId, rubyType);
     value[RUBY_VALUE] = rubyReferenceId;
+    value[RUBY_TYPE] = rubyType;
     const proxyMethods = {
         set: function setPropertyOnRubyValue(obj, prop, value) {
             const jsValue = getReference(value);
@@ -974,11 +995,11 @@ function makeRubyValue(rubyReferenceId) {
             }
             if (prop === Symbol.iterator) {
                 prop = "each";
-                const rubyType = Module.ccall("get_ruby_reference_property_type", "string", ["string", "number"], [prop, rubyReferenceId]);
+                const rubyType = Module.ccall("get_ruby_reference_property_type", "string", ["string", "number"], [prop, refToNumber(rubyReferenceId)]);
                 if (rubyType !== "method") {
                     throw new Error("Ruby value does not implement #each and cannot be iterated");
                 }
-                const iteratorReference = Module.ccall("get_ruby_iterator_reference", "number", ["number"], [rubyReferenceId]);
+                const iteratorReference = ReferenceToRuby(Module.ccall("get_ruby_iterator_reference", "number", ["number"], [refToNumber(rubyReferenceId)]));
                 return makeRubyValue(iteratorReference);
             }
             if (Symbol.toPrimitive && prop === Symbol.toPrimitive) {
@@ -1006,21 +1027,21 @@ function makeRubyValue(rubyReferenceId) {
 }
 function accessProperty(value, rubyReferenceId, rubyType, prop) {
     return tryCatchThrow(() => {
-        const propertyRubyType = Module.ccall("get_ruby_reference_property_type", "string", ["string", "number"], [prop, rubyReferenceId]);
+        const propertyRubyType = Module.ccall("get_ruby_reference_property_type", "string", ["string", "number"], [prop, refToNumber(rubyReferenceId)]);
         if (rubyType === "array" && prop === "length") {
             callbackArgs = [];
-            const methodRubyReferenceId = Module.ccall("get_ruby_method_reference", "number", ["string", "number"], [prop, rubyReferenceId]);
-            const resultReferenceId = Module.ccall("call_ruby_value_returning_reference", "number", ["number"], [methodRubyReferenceId]);
-            const result = Module.ccall("get_ruby_reference_as_int", "number", ["number"], [resultReferenceId]);
+            const methodRubyReferenceId = ReferenceToRuby(Module.ccall("get_ruby_method_reference", "number", ["string", "number"], [prop, refToNumber(rubyReferenceId)]));
+            const resultReferenceId = ReferenceToRuby(Module.ccall("call_ruby_value_returning_reference", "number", ["number"], [refToNumber(methodRubyReferenceId)]));
+            const result = Module.ccall("get_ruby_reference_as_int", "number", ["number"], [refToNumber(resultReferenceId)]);
             cleanupReference(methodRubyReferenceId);
             cleanupReference(resultReferenceId);
             return result;
         }
         if (propertyRubyType === "number") {
-            return Module.ccall("get_ruby_reference_number", "number", ["string", "number"], [prop, rubyReferenceId]);
+            return Module.ccall("get_ruby_reference_number", "number", ["string", "number"], [prop, refToNumber(rubyReferenceId)]);
         }
         if (propertyRubyType === "string") {
-            return Module.ccall("get_ruby_reference_string", "string", ["string", "number"], [prop, rubyReferenceId]);
+            return Module.ccall("get_ruby_reference_string", "string", ["string", "number"], [prop, refToNumber(rubyReferenceId)]);
         }
         if (propertyRubyType === "null") {
             return null;
@@ -1029,7 +1050,7 @@ function accessProperty(value, rubyReferenceId, rubyType, prop) {
             return undefined;
         }
         if (propertyRubyType === "method") {
-            const methodRubyReferenceId = Module.ccall("get_ruby_method_reference", "number", ["string", "number"], [prop, rubyReferenceId]);
+            const methodRubyReferenceId = ReferenceToRuby(Module.ccall("get_ruby_method_reference", "number", ["string", "number"], [prop, refToNumber(rubyReferenceId)]));
             return makeRubyValue(methodRubyReferenceId);
         }
         if (propertyRubyType === "true") {
@@ -1042,13 +1063,13 @@ function accessProperty(value, rubyReferenceId, rubyType, prop) {
             const jsReferenceIdString = Prism.eval(`
         Prism::ExternalReferences.get_js_value_reference_number(${JSON.stringify(prop, null, 2)}, ${rubyReferenceId})
       `);
-            return references.get(parseInt(jsReferenceIdString, 10));
+            return references.get(ReferenceToJS(parseInt(jsReferenceIdString, 10)));
         }
         if (propertyRubyType === "object" || propertyRubyType === "array") {
             const newRubyReferenceId = Prism.eval(`
         Prism::ExternalReferences.get_ruby_property_object(${JSON.stringify(prop)}, ${rubyReferenceId})
       `);
-            return makeRubyValue(parseInt(newRubyReferenceId, 10));
+            return makeRubyValue(ReferenceToRuby(parseInt(newRubyReferenceId, 10)));
         }
         throw new Error("unhandled ruby type: " + propertyRubyType);
     });
@@ -1062,11 +1083,11 @@ function setObjectValueFromRubyReference(reference, name, rubyReferenceId) {
 }
 function getReference(obj) {
     if (obj === null) {
-        return 0;
+        return ReferenceToJS(0);
     }
     const refId = _refId++;
-    references.set(refId, obj);
-    return refId;
+    references.set(ReferenceToJS(refId), obj);
+    return ReferenceToJS(refId);
 }
 function freeReference(refId) {
     references.delete(refId);

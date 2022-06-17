@@ -1446,34 +1446,34 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  213528: function() {return Prism.getWindowReference();},  
- 213567: function() {return Prism.getPrismBindingsReference();},  
- 213613: function() {return Prism.getDocumentReference();},  
- 213654: function() {return Prism.getArgsReference();},  
- 213691: function() {return Prism.clearArgs();},  
- 213721: function($0, $1) {return Prism.setArgString($0, UTF8ToString($1));},  
- 213774: function($0, $1) {return Prism.setArgNumber($0, $1);},  
- 213813: function($0, $1) {return Prism.setArgValue($0, $1);},  
- 213851: function($0, $1) {return Prism.setArgCallback($0, $1);},  
- 213892: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},  
- 213965: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},  
- 214024: function($0, $1, $2) {return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);},  
- 214096: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), undefined);},  
- 214162: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), null);},  
- 214223: function($0, $1, $2) {return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);},  
- 214299: function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},  
- 214350: function($0, $1) {return Prism.callMethodReturningReference($0, $1);},  
- 214405: function($0) {return Prism.callConstructor($0);},  
- 214443: function($0) {return Prism.getValueNumber($0);},  
- 214480: function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},  
- 214538: function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},  
- 214786: function($0) {return Prism.getRubyReferenceId($0);},  
- 214827: function($0) {return Prism.makeCallbackReference($0);},  
- 214871: function($0) {return Prism.checkIfFunctionIsContructor($0);},  
- 214921: function() {return Prism.getArgCount();},  
- 214953: function($0) {return Prism.getArgNumber($0);},  
- 214988: function($0) {return Prism.getArgReference($0);},  
- 215026: function($0) {return Prism.freeReference($0);}
+  213544: function() {return Prism.getWindowReference();},  
+ 213583: function() {return Prism.getPrismBindingsReference();},  
+ 213629: function() {return Prism.getDocumentReference();},  
+ 213670: function() {return Prism.getArgsReference();},  
+ 213707: function() {return Prism.clearArgs();},  
+ 213737: function($0, $1) {return Prism.setArgString($0, UTF8ToString($1));},  
+ 213790: function($0, $1) {return Prism.setArgNumber($0, $1);},  
+ 213829: function($0, $1) {return Prism.setArgValue($0, $1);},  
+ 213867: function($0, $1) {return Prism.setArgCallback($0, $1);},  
+ 213908: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), UTF8ToString($2));},  
+ 213981: function($0, $1, $2) {return Prism.setObjectValue($0, UTF8ToString($1), $2);},  
+ 214040: function($0, $1, $2) {return Prism.setObjectValueFromReference($0, UTF8ToString($1), $2);},  
+ 214112: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), undefined);},  
+ 214178: function($0, $1) {return Prism.setObjectValue($0, UTF8ToString($1), null);},  
+ 214239: function($0, $1, $2) {return Prism.setObjectValueFromRubyReference($0, UTF8ToString($1), $2);},  
+ 214315: function($0, $1) {return Prism.callMethod($0, UTF8ToString($1));},  
+ 214366: function($0, $1) {return Prism.callMethodReturningReference($0, $1);},  
+ 214421: function($0) {return Prism.callConstructor($0);},  
+ 214459: function($0) {return Prism.getValueNumber($0);},  
+ 214496: function($0, $1) {return Prism.getValueReference($0, UTF8ToString($1));},  
+ 214554: function($0, $1) {var string = Prism.getTypeOf($0, UTF8ToString($1)); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap;},  
+ 214802: function($0) {return Prism.getRubyReferenceId($0);},  
+ 214843: function($0) {return Prism.makeCallbackReference($0);},  
+ 214887: function($0) {return Prism.checkIfFunctionIsContructor($0);},  
+ 214937: function() {return Prism.getArgCount();},  
+ 214969: function($0) {return Prism.getArgNumber($0);},  
+ 215004: function($0) {return Prism.getArgReference($0);},  
+ 215042: function($0) {return Prism.freeReference($0);}
 };
 function get_arg_class_name_(index){ var string = Prism.getArgClassName(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
 function get_arg_string_(index){ var string = Prism.getArgString(index); var lengthBytes = lengthBytesUTF8(string.toString()) + 1; var stringOnWasmHeap = _malloc(lengthBytes); stringToUTF8(string.toString(), stringOnWasmHeap, lengthBytes); return stringOnWasmHeap; }
@@ -6684,6 +6684,11 @@ var _get_ruby_reference_property_type = Module["_get_ruby_reference_property_typ
 /** @type {function(...*):?} */
 var _get_ruby_reference_number = Module["_get_ruby_reference_number"] = function() {
   return (_get_ruby_reference_number = Module["_get_ruby_reference_number"] = Module["asm"]["get_ruby_reference_number"]).apply(null, arguments);
+};
+
+/** @type {function(...*):?} */
+var _get_ruby_reference_to_s = Module["_get_ruby_reference_to_s"] = function() {
+  return (_get_ruby_reference_to_s = Module["_get_ruby_reference_to_s"] = Module["asm"]["get_ruby_reference_to_s"]).apply(null, arguments);
 };
 
 /** @type {function(...*):?} */
