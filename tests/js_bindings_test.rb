@@ -464,6 +464,18 @@ class JSBindingsTest
 
       assert_eq(window.stringConversionTest(input), true)
     end
+
+    run_test "ruby numbers are converted to JavaScript" do
+      input = {"test" => -> { 5 }}
+
+      window.eval <<~JS
+        window.numberConversionTest = function (obj) {
+          return obj.test() === 5;
+        }
+      JS
+
+      assert_eq(window.numberConversionTest(input), true)
+    end
   end
 end
 

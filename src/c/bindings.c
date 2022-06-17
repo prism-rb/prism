@@ -798,6 +798,25 @@ EXPORT char* get_ruby_reference_to_s(int ruby_reference_id) {
   return RSTRING_PTR(value);
 }
 
+EXPORT long get_ruby_reference_to_f(int ruby_reference_id) {
+  mrb_value value;
+
+  value = mrb_funcall(
+    mrb,
+    mrb_obj_value(external_references),
+    "get_ruby_reference_to_f",
+    1,
+    mrb_int_value(mrb, ruby_reference_id)
+  );
+
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = NULL;
+  }
+
+  return mrb_float(value);
+}
+
 EXPORT char* get_ruby_reference_string(char* prop_name, int ruby_reference_id) {
   mrb_value value;
 

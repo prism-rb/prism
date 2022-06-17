@@ -439,6 +439,10 @@ module Prism
       dereference(ruby_reference_id).to_s
     end
 
+    def self.get_ruby_reference_to_f(ruby_reference_id)
+      dereference(ruby_reference_id).to_f
+    end
+
     def self.get_ruby_reference_string(prop_name, ruby_reference_id)
       lookup_reference_prop_from_js_key(prop_name, ruby_reference_id).to_s
     end

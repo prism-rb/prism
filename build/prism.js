@@ -971,7 +971,11 @@ function makeInnerRubyValue(rubyReferenceId, rubyType) {
             cleanupReference(newRubyReferenceId);
             return value;
         }
-        // TODO - promote strings and numbers to JS primitives here
+        if (rubyType === "number") {
+            const value = Module.ccall("get_ruby_reference_to_f", "number", ["number"], [refToNumber(newRubyReferenceId)]);
+            cleanupReference(newRubyReferenceId);
+            return value;
+        }
         return makeRubyValue(newRubyReferenceId);
     };
 }
