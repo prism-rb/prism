@@ -209,6 +209,7 @@ function makeInnerRubyValue(rubyReferenceId: ReferenceToRuby, rubyType: RubyType
       return lookupReference(jsReferenceId);
     }
 
+    // TODO - promote strings and numbers to JS primitives here
     return makeRubyValue(newRubyReferenceId);
   };
 }
@@ -276,11 +277,21 @@ function makeRubyValue(rubyReferenceId: ReferenceToRuby): RubyValue {
       }
 
       if (typeof prop === "symbol") {
-        throw new Error("unhandled symbol prop acces on ruby value: " + prop.toString());
+        throw new Error("unhandled symbol prop access on ruby value: " + prop.toString());
       }
 
       return accessProperty(rubyValue, rubyReferenceId, rubyType, prop);
     },
+    ownKeys(): string[] {
+      return rubyValue.keys && Array.from(rubyValue.keys());
+    },
+    getOwnPropertyDescriptor() {
+      // TODO - this should be real
+      return {
+        enumerable: true,
+        configurable: true
+      };
+    }
   };
 
   const rubyValue = new Proxy(value, proxyMethods);

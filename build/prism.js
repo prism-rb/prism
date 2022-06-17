@@ -849,29 +849,6 @@ exports.default = vnode;
 
 },{}],13:[function(require,module,exports){
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 const snabbdom = require("snabbdom");
 const patch = snabbdom.init([
     require("snabbdom/modules/class").default,
@@ -974,6 +951,7 @@ function makeInnerRubyValue(rubyReferenceId, rubyType) {
             const jsReferenceId = Module.ccall("get_ruby_reference_number", "number", ["string", "number"], ["value", rubyReferenceId]);
             return lookupReference(jsReferenceId);
         }
+        // TODO - promote strings and numbers to JS primitives here
         return makeRubyValue(newRubyReferenceId);
     };
 }
@@ -1007,10 +985,20 @@ function makeRubyValue(rubyReferenceId) {
                 return {}[Symbol.toPrimitive];
             }
             if (typeof prop === "symbol") {
-                throw new Error("unhandled symbol prop acces on ruby value: " + prop.toString());
+                throw new Error("unhandled symbol prop access on ruby value: " + prop.toString());
             }
             return accessProperty(rubyValue, rubyReferenceId, rubyType, prop);
         },
+        ownKeys() {
+            return rubyValue.keys && Array.from(rubyValue.keys());
+        },
+        getOwnPropertyDescriptor() {
+            // TODO - this should be real
+            return {
+                enumerable: true,
+                configurable: true
+            };
+        }
     };
     const rubyValue = new Proxy(value, proxyMethods);
     registry.register(rubyValue, rubyReferenceId);
@@ -1237,7 +1225,7 @@ const Prism = {
 };
 window.Prism = Prism;
 function importJS(url) {
-    return Promise.resolve().then(() => __importStar(require(url)));
+    return import(url);
 }
 function fetchAndLoad(name) {
     return fetch(name)

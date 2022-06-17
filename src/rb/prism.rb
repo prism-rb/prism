@@ -389,19 +389,18 @@ module Prism
       end
 
       begin
-
-      prop_name_as_int = prop_name.to_i
+        prop_name_as_int = prop_name.to_i
 
         if prop_name_as_int.to_s == prop_name
           prop_name = prop_name_as_int
         end
-
       rescue ArgumentError
       end
 
       begin
         _get_ruby_property_type(value.fetch(prop_name, JS.undefined))
-      rescue ArgumentError, NoMethodError
+      rescue ArgumentError, NoMethodError => e
+        puts "Error in get_ruby_reference_property_type: #{e.class.name} #{e.message}, value: #{value} prop: #{prop_name}"
         "undefined"
       end
     end

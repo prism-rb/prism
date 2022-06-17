@@ -56,9 +56,9 @@ class Counter < SnabbdomComponent
 
   def render
     @snabbdom.h("div.counter", {}, [
-      @snabbdom.h("button", {on: {click: -> { change(1) }}}, "+"),
+      @snabbdom.h("div", "Count: #{@count}"),
+      @snabbdom.h("button", {"on"  => {"click" => -> { change(1) }}}, "+"),
       @snabbdom.h("button", "-"),
-      "Count: #{@count}"
     ])
   end
 end

@@ -1,4 +1,4 @@
-class JSBindingsTest < Prism::Component
+class JSBindingsTest
   include JS::Global
 
   def initialize
@@ -434,6 +434,23 @@ class JSBindingsTest < Prism::Component
 
       assert_eq(window.assertLengthIsThree([:a, :b, :c]), true)
       assert_eq(window.assertLengthIsThree([]), false)
+    end
+
+    run_test "ruby hashes can be used with for-in" do
+      window.eval <<~JS
+        window.forInTest = function (obj) {
+          var output = "";
+
+          for (var key in obj) {
+            output += key;
+            output += obj[key];
+          }
+
+          return output;
+        }
+      JS
+
+      assert_eq(window.forInTest({"foo" => "bar"}), "foobar")
     end
   end
 end
