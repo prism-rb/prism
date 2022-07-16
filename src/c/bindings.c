@@ -798,7 +798,7 @@ EXPORT char* get_ruby_reference_to_s(int ruby_reference_id) {
   return RSTRING_PTR(value);
 }
 
-EXPORT long get_ruby_reference_to_f(int ruby_reference_id) {
+EXPORT double get_ruby_reference_to_f(int ruby_reference_id) {
   mrb_value value;
 
   value = mrb_funcall(

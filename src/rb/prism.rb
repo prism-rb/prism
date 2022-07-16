@@ -378,13 +378,13 @@ module Prism
         return "method"
       end
 
-      _get_ruby_property_type(value)
+      result = _get_ruby_property_type(value)
     end
 
     def self.get_ruby_reference_property_type(prop_name, ruby_reference_id)
       value = @@references[ruby_reference_id]
 
-      if value.respond_to?(prop_name)
+      if prop_name != "class" && value.respond_to?(prop_name)
         return "method"
       end
 

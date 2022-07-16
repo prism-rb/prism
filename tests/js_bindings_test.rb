@@ -476,6 +476,18 @@ class JSBindingsTest
 
       assert_eq(window.numberConversionTest(input), true)
     end
+
+    run_test "ruby class method is not exposed to JS" do
+      input = {"class" => "foo"}
+
+      window.eval <<~JS
+        window.classExposureTest = function (obj) {
+          return obj.class == "foo";
+        }
+      JS
+
+      assert_eq(window.classExposureTest(input), true)
+    end
   end
 end
 

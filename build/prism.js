@@ -962,21 +962,20 @@ function makeInnerRubyValue(rubyReferenceId, rubyType) {
         callbackArgs = args;
         const newRubyReferenceId = Module.ccall("call_ruby_value_returning_reference", "number", ["number"], [refToNumber(rubyReferenceId)]);
         const rubyType = Module.ccall("get_ruby_reference_type", "string", ["number"], [refToNumber(newRubyReferenceId)]);
+        const newRubyValue = makeRubyValue(newRubyReferenceId);
         if (rubyType === "js_value") {
-            const jsReferenceId = Module.ccall("get_ruby_reference_number", "number", ["string", "number"], ["value", refToNumber(rubyReferenceId)]);
+            const jsReferenceId = ReferenceToJS(newRubyValue._reference().value());
             return lookupReference(jsReferenceId);
         }
         if (rubyType === "string") {
             const value = Module.ccall("get_ruby_reference_to_s", "string", ["number"], [refToNumber(newRubyReferenceId)]);
-            cleanupReference(newRubyReferenceId);
             return value;
         }
         if (rubyType === "number") {
             const value = Module.ccall("get_ruby_reference_to_f", "number", ["number"], [refToNumber(newRubyReferenceId)]);
-            cleanupReference(newRubyReferenceId);
             return value;
         }
-        return makeRubyValue(newRubyReferenceId);
+        return newRubyValue;
     };
 }
 function makeRubyValue(rubyReferenceId) {

@@ -219,17 +219,13 @@ function makeInnerRubyValue(rubyReferenceId: ReferenceToRuby, rubyType: RubyType
       [refToNumber(newRubyReferenceId)]
     );
 
+    const newRubyValue = makeRubyValue(newRubyReferenceId);
+
     if (rubyType === "js_value") {
-      const jsReferenceId = Module.ccall(
-        "get_ruby_reference_number",
-        "number",
-        ["string", "number"],
-        ["value", refToNumber(rubyReferenceId)]
-      ) as unknown as ReferenceToJS;
+      const jsReferenceId = ReferenceToJS((newRubyValue as any)._reference().value())
 
       return lookupReference(jsReferenceId);
     }
-
 
     if (rubyType === "string") {
       const value = Module.ccall(
@@ -238,8 +234,6 @@ function makeInnerRubyValue(rubyReferenceId: ReferenceToRuby, rubyType: RubyType
         ["number"],
         [refToNumber(newRubyReferenceId)]
       );
-
-      cleanupReference(newRubyReferenceId);
 
       return value;
     }
@@ -252,12 +246,10 @@ function makeInnerRubyValue(rubyReferenceId: ReferenceToRuby, rubyType: RubyType
         [refToNumber(newRubyReferenceId)]
       );
 
-      cleanupReference(newRubyReferenceId);
-
       return value;
     }
 
-    return makeRubyValue(newRubyReferenceId);
+    return newRubyValue;
   };
 }
 

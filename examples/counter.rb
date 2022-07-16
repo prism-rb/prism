@@ -2,7 +2,7 @@ class SnabbdomComponent
   def initialize
     JS.import("https://cdn.skypack.dev/snabbdom").then do |snabbdom|
       @snabbdom = snabbdom
-      p @snabbdom
+
       window.snabbdom = @snabbdom
 
       @patch = snabbdom.init([
@@ -57,8 +57,8 @@ class Counter < SnabbdomComponent
   def render
     @snabbdom.h("div.counter", {}, [
       @snabbdom.h("div", "Count: #{@count}"),
-      @snabbdom.h("button", {"on"  => {"click" => -> { change(1) }}}, "+"),
-      @snabbdom.h("button", "-"),
+      @snabbdom.h("button", {"on" => {"click" => -> { change(1) }}}, "+"),
+      @snabbdom.h("button", {"on" => {"click" => -> { change(-1) }}}, "-"),
     ])
   end
 end
