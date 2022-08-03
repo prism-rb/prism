@@ -323,7 +323,7 @@ function makeRubyValue(rubyReferenceId: ReferenceToRuby): RubyValue {
       return accessProperty(rubyValue, rubyReferenceId, rubyType, prop);
     },
     ownKeys(): string[] {
-      return rubyValue.keys && Array.from(rubyValue.keys());
+      return rubyValue.keys && Array.from(rubyValue.keys()).map((i: any) => typeof i === "object" ? i.to_s() : i);
     },
     getOwnPropertyDescriptor() {
       // TODO - this should be real

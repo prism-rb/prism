@@ -398,7 +398,7 @@ module Prism
       end
 
       begin
-        _get_ruby_property_type(value.fetch(prop_name, JS.undefined))
+        _get_ruby_property_type(lookup_property(value, prop_name))
       rescue ArgumentError, NoMethodError => e
         puts "Error in get_ruby_reference_property_type: #{e.class.name} #{e.message}, value: #{value} prop: #{prop_name}"
         "undefined"
@@ -428,7 +428,7 @@ module Prism
         prop_name = prop_name_as_int
       end
 
-      value.fetch(prop_name, JS.undefined)
+      lookup_property(value, prop_name)
     end
 
     def self.get_ruby_reference_number(prop_name, ruby_reference_id)
@@ -489,6 +489,16 @@ module Prism
 
     def self.get_ruby_reference_as_int(ruby_reference_id)
       dereference(ruby_reference_id).to_i
+    end
+
+    def self.lookup_property(value, property_name)
+      result = value.fetch(property_name, JS.undefined)
+
+      if result == JS.undefined && property_name.respond_to?(:to_sym)
+        result = value[property_name.to_sym] || JS.undefined
+      end
+
+      result
     end
   end
 end

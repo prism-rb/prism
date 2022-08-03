@@ -361,7 +361,7 @@ class JSBindingsTest
       assert_eq(window.getFoo(data), undefined)
     end
 
-    run_test "accessing an out of bounds property on a ruby arrayk from JS" do
+    run_test "accessing an out of bounds property on a ruby array from JS" do
       window.eval <<~JS
         window.getThird = function (obj) {
           return obj[2];
@@ -487,6 +487,18 @@ class JSBindingsTest
       JS
 
       assert_eq(window.classExposureTest(input), true)
+    end
+
+    run_test "symbol keys can be looked up with strings in JS" do
+      input = {arbitrary: "data"}
+
+      window.eval <<~JS
+        window.symbolKeyLookupTest = function (obj) {
+          return obj.arbitrary == "data";
+        }
+      JS
+
+      assert_eq(window.symbolKeyLookupTest(input), true)
     end
   end
 end

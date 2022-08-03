@@ -33,16 +33,16 @@ class Counter < SnabbdomComponent
 
   attr_reader :count
 
-  def initialize(count, &remove)
+  def initialize(count)
     super()
 
     @initial_count = count
     @count = count
-    @remove = remove
   end
 
   def change(amount)
     @count += amount
+
     update_vdom
   end
 
@@ -50,15 +50,11 @@ class Counter < SnabbdomComponent
     @count = @initial_count
   end
 
-  def remove
-    @remove.call
-  end
-
   def render
     @snabbdom.h("div.counter", {}, [
       @snabbdom.h("div", "Count: #{@count}"),
-      @snabbdom.h("button", {"on" => {"click" => -> { change(1) }}}, "+"),
-      @snabbdom.h("button", {"on" => {"click" => -> { change(-1) }}}, "-"),
+      @snabbdom.h("button", {on: {click: -> { change(1) }}}, "+"),
+      @snabbdom.h("button", {on: {click: -> { change(-1) }}}, "-"),
     ])
   end
 end
